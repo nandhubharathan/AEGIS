@@ -1,5 +1,5 @@
 """
-app.py — AEGIS Security Assessment Platform (Streamlit Edition)
+app.py - AEGIS Security Assessment Platform (Streamlit Edition)
 ================================================================
 Embeds the original index.html UI pixel-perfectly inside Streamlit,
 with the backend powered by Python/Streamlit instead of Flask.
@@ -11,24 +11,22 @@ import streamlit as st
 import streamlit.components.v1 as components
 import subprocess, os, sys, json, hashlib, glob, re, time, datetime, threading, io
 
-# ── Shared user data layer ───────────────────────────────────────────────────
+# -- Shared user data layer
 from user_store import load_users, save_users, hash_pw, ensure_admin, invalidate_cache
 
-# ── Paths ────────────────────────────────────────────────────────────────────
+# -- Paths
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 USERS_FILE  = os.path.join(BASE_DIR, "users.json")
 
-# ── Page config ──────────────────────────────────────────────────────────────
+# -- Page config
 st.set_page_config(
-    page_title="AEGIS — Security Assessment Platform",
-    page_icon="🛡",
+    page_title="AEGIS - Security Assessment Platform",
+    page_icon="shield",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# ══════════════════════════════════════════════════════════════════════════════
-# HIDE STREAMLIT CHROME — we want ONLY our UI visible
-# ══════════════════════════════════════════════════════════════════════════════
+# Hide Streamlit chrome
 st.markdown("""
 <style>
 #MainMenu, footer, header, .stDeployButton,
@@ -43,21 +41,17 @@ iframe { border:none !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# USER STORE — powered by shared user_store.py
-# ══════════════════════════════════════════════════════════════════════════════
+# Ensure admin account exists
 ensure_admin()
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SESSION STATE
-# ══════════════════════════════════════════════════════════════════════════════
+# Session state
 for k, v in {"user":None, "scan_phase":"idle", "scan_log":[], "scan_result":None, "scan_report_md":""}.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SCAN EXECUTION (runs scanner.py OWASP checks via direct import)
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
+# SCAN EXECUTION
+# ==============================================================================
 def run_scan_internal(target_url, mode, preset, token, cookie, username, password):
     """Run scanner.py as subprocess and capture output + report."""
     cmd = [sys.executable, os.path.join(BASE_DIR, "scanner.py"),
@@ -82,19 +76,17 @@ def run_scan_internal(target_url, mode, preset, token, cookie, username, passwor
         lines = [f"[!] Error: {e}"]
         raw_stdout = ""
 
-    # Extract report markdown from stdout (between delimiters)
     md = ""
     if "===AEGIS_REPORT_START===" in raw_stdout and "===AEGIS_REPORT_END===" in raw_stdout:
         md = raw_stdout.split("===AEGIS_REPORT_START===", 1)[1].split("===AEGIS_REPORT_END===", 1)[0].strip()
 
-    # Filter out the report delimiters from the log lines shown to the user
     lines = [l for l in lines if "===AEGIS_REPORT" not in l and not l.startswith("# Security Assessment")]
 
     return lines, md
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
 # BUILD THE FULL HTML PAGE
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
 def build_full_html():
     """Read index.html and modify JS to work standalone (no Flask backend)."""
 
@@ -102,172 +94,154 @@ def build_full_html():
     with open(html_path, encoding="utf-8") as f:
         original_html = f.read()
 
-    # Load users for client-side auth (force fresh read to catch admin changes)
     users = load_users(force_refresh=True)
     users_json = json.dumps({
         email: {"email": u["email"], "pw_hash": u["pw_hash"], "role": u.get("role","user")}
         for email, u in users.items()
     })
 
-    # Pass scan result to iframe if available
     scan_result = st.session_state.get("scan_result") or {}
     scan_result_json = json.dumps(scan_result)
 
-    override_js = f"""
-// ═══════════════════════════════════════════════════
-// STREAMLIT OVERRIDES — replace Flask API calls
-// ═══════════════════════════════════════════════════
-const _USERS_DB = {users_json};
+    # Build the override JS as a separate string to avoid f-string escaping issues
+    override_js = """
+// STREAMLIT OVERRIDES
+const _USERS_DB = __USERS__;
 const _REPORTS_DB = [];
 
-// SHA-256 hash function (browser native)
-async function sha256(msg) {{
+async function sha256(msg) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}}
+}
 
-// Override signIn to work client-side
-async function signIn() {{
+async function signIn() {
     const email = document.getElementById('si-email').value.trim().toLowerCase();
     const pass  = document.getElementById('si-pass').value;
     const err   = document.getElementById('si-err');
     document.getElementById('si-email').classList.remove('err');
     document.getElementById('si-pass').classList.remove('err');
     err.textContent = '';
-
-    if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){{
+    if(!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){
         document.getElementById('si-email').classList.add('err');
         err.textContent = 'Please enter a valid email address.'; return;
-    }}
-    if(!pass || pass.length < 1){{
+    }
+    if(!pass || pass.length < 1){
         document.getElementById('si-pass').classList.add('err');
         err.textContent = 'Please enter your password.'; return;
-    }}
-
-    err.textContent = 'Authenticating…';
+    }
+    err.textContent = 'Authenticating...';
     const hash = await sha256(pass);
     const user = _USERS_DB[email];
-
-    if(!user || user.pw_hash !== hash){{
+    if(!user || user.pw_hash !== hash){
         err.textContent = 'Invalid email or password.';
         document.getElementById('si-email').classList.add('err');
         document.getElementById('si-pass').classList.add('err');
         return;
-    }}
-
-    _currentUser = {{email: user.email, role: user.role}};
+    }
+    _currentUser = {email: user.email, role: user.role};
     if(user.role === 'admin') _adminToken = 'streamlit-admin';
     _afterLogin();
-}}
+}
 
-// Override admin user management for client-side (session-only)
-async function adminLoadUsers(){{
+async function adminLoadUsers(){
     if(!_adminToken) return;
-    const tbody = document.getElementById('utbl-body');
-    const users = Object.values(_USERS_DB);
-    if(!users.length){{ tbody.innerHTML='<tr><td colspan="3" class="utbl-empty">No users.</td></tr>'; return; }}
-    tbody.innerHTML = users.map(u=>`<tr>
-        <td>${{eh(u.email)}}</td>
-        <td><span class="role-badge ${{u.role}}">${{u.role.toUpperCase()}}</span></td>
-        <td style="text-align:right">
-            <button class="btn-del" onclick="adminDeleteUser('${{eh(u.email)}}')" title="Remove">✕</button>
-        </td></tr>`).join('');
-}}
-async function adminAddUser(){{
-    const email = document.getElementById('au-email').value.trim().toLowerCase();
-    const pass  = document.getElementById('au-pass').value;
-    const role  = document.getElementById('au-role').value;
+    var tbody = document.getElementById('utbl-body');
+    var users = Object.values(_USERS_DB);
+    if(!users.length){ tbody.innerHTML='<tr><td colspan="3" class="utbl-empty">No users.</td></tr>'; return; }
+    tbody.innerHTML = users.map(function(u){return '<tr><td>'+eh(u.email)+'</td><td><span class="role-badge '+u.role+'">'+u.role.toUpperCase()+'</span></td><td style="text-align:right"><button class="btn-del" onclick="adminDeleteUser(\\'' +eh(u.email)+'\\')">x</button></td></tr>';}).join('');
+}
+async function adminAddUser(){
+    var email = document.getElementById('au-email').value.trim().toLowerCase();
+    var pass  = document.getElementById('au-pass').value;
+    var role  = document.getElementById('au-role').value;
     _setAuMsg('','');
-    if(!email){{ _setAuMsg('Enter email.','err'); return; }}
-    if(!pass || pass.length < 6){{ _setAuMsg('Min 6 chars.','err'); return; }}
-    if(_USERS_DB[email]){{ _setAuMsg('Exists.','err'); return; }}
-    const hash = await sha256(pass);
-    _USERS_DB[email] = {{email, pw_hash:hash, role}};
+    if(!email){ _setAuMsg('Enter email.','err'); return; }
+    if(!pass || pass.length < 6){ _setAuMsg('Min 6 chars.','err'); return; }
+    if(_USERS_DB[email]){ _setAuMsg('Exists.','err'); return; }
+    var hash = await sha256(pass);
+    _USERS_DB[email] = {email:email, pw_hash:hash, role:role};
     _setAuMsg('Added (session only).','ok');
     document.getElementById('au-email').value='';
     document.getElementById('au-pass').value='';
     adminLoadUsers();
-}}
-async function adminDeleteUser(email){{
+}
+async function adminDeleteUser(email){
     if(!confirm('Remove ' + email + '?')) return;
     delete _USERS_DB[email];
     adminLoadUsers();
-}}
-async function adminToggleRole(email, newRole){{
+}
+async function adminToggleRole(email, newRole){
     if(_USERS_DB[email]) _USERS_DB[email].role = newRole;
     adminLoadUsers();
-}}
+}
 
-// ═══════════════════════════════════════════════════
-// SCAN — trigger via parent URL query params
-// ═══════════════════════════════════════════════════
-async function launch(){{
-    const raw = document.getElementById('urlInput').value.trim();
-    const uel = document.getElementById('urlInput');
-    if(!raw){{uel.classList.add('err');return;}}
-    if(!/^https?:\/\//i.test(raw)){{uel.classList.add('err');showErr('URL must start with http:// or https://');return;}}
+// SCAN - send postMessage to parent frame
+async function launch(){
+    var raw = document.getElementById('urlInput').value.trim();
+    var uel = document.getElementById('urlInput');
+    if(!raw){uel.classList.add('err');return;}
+    if(!/^https?:\\/\\//i.test(raw)){uel.classList.add('err');showErr('URL must start with http:// or https://');return;}
     uel.classList.remove('err');
     document.getElementById('errbox').style.display='none';
+    var stEl = document.getElementById('status');
+    setScanningUI(true);
+    stEl.className='sline run';
+    stEl.textContent='Scanning ' + raw + '...';
+    startLog();
+    startProgressBar();
 
-    // Build query params and navigate parent to trigger Streamlit scan
-    const params = new URLSearchParams();
-    params.set('aegis_scan', '1');
-    params.set('scan_url', raw);
-    params.set('scan_mode', _mode);
-    params.set('scan_preset', _preset || '');
-    params.set('scan_token', document.getElementById('authToken').value.trim());
-    params.set('scan_cookie', document.getElementById('authCookie').value.trim());
-    params.set('scan_user', document.getElementById('authUser').value.trim());
-    params.set('scan_pass', document.getElementById('authPass').value);
-    window.parent.location.href = window.parent.location.pathname + '?' + params.toString();
-}}
+    // Post message to parent - the parent has a listener injected via st.markdown
+    window.parent.postMessage({
+        type: 'aegis_run_scan',
+        scan_url: raw,
+        scan_mode: _mode,
+        scan_preset: _preset || '',
+        scan_token: document.getElementById('authToken').value.trim(),
+        scan_cookie: document.getElementById('authCookie').value.trim(),
+        scan_user: document.getElementById('authUser').value.trim(),
+        scan_pass: document.getElementById('authPass').value
+    }, '*');
+}
 
-// ═══════════════════════════════════════════════════
-// CHECK FOR SCAN RESULTS (injected by Streamlit)
-// ═══════════════════════════════════════════════════
-const _SCAN_RESULT = {scan_result_json};
-if(_SCAN_RESULT && _SCAN_RESULT.done) {{
-    document.addEventListener('DOMContentLoaded', function() {{
+// Check for scan results injected by Streamlit
+var _SCAN_RESULT = __SCAN_RESULT__;
+if(_SCAN_RESULT && _SCAN_RESULT.done) {
+    document.addEventListener('DOMContentLoaded', function() {
         goPage('p4');
-
-        // Show log
         document.getElementById('logbox').classList.add('show');
         document.getElementById('livebadge').className='livebadge off';
         document.getElementById('livebadge').textContent='DONE';
-
-        if(_SCAN_RESULT.lines) {{
+        if(_SCAN_RESULT.lines) {
             _logAll = _SCAN_RESULT.lines;
             rebuildFilt();
             renderLog();
-        }}
-
-        // Update status
+        }
         var stEl = document.getElementById('status');
-        if(_SCAN_RESULT.error && !_SCAN_RESULT.markdown) {{
+        if(_SCAN_RESULT.error && !_SCAN_RESULT.markdown) {
             stEl.className='sline err';
             stEl.textContent='Scan issue: ' + _SCAN_RESULT.error;
-        }} else {{
+        } else {
             stEl.className='sline done';
             stEl.textContent='Scan complete';
-        }}
-
-        // Set URL
-        if(_SCAN_RESULT.url) {{
+        }
+        if(_SCAN_RESULT.url) {
             document.getElementById('urlInput').value = _SCAN_RESULT.url;
-            try {{ document.getElementById('sh-co').textContent = _SCAN_RESULT.url; }} catch(e) {{}}
-        }}
+            try { document.getElementById('sh-co').textContent = _SCAN_RESULT.url; } catch(e) {}
+        }
+        if(_SCAN_RESULT.markdown) {
+            setTimeout(function() {
+                buildReport({markdown: _SCAN_RESULT.markdown}, _SCAN_RESULT.url || '', _SCAN_RESULT.mode || 'standard', null);
+            }, 300);
+        }
+    });
+}
 
-        // Build report
-        if(_SCAN_RESULT.markdown) {{
-            setTimeout(function() {{
-                buildReport({{markdown: _SCAN_RESULT.markdown}}, _SCAN_RESULT.url || '', _SCAN_RESULT.mode || 'standard', null);
-            }}, 300);
-        }}
-    }});
-}}
-
-function loadLastReport() {{}}
+function loadLastReport() {}
 """
+
+    # Do simple string replacement instead of f-string to avoid escaping nightmares
+    override_js = override_js.replace("__USERS__", users_json)
+    override_js = override_js.replace("__SCAN_RESULT__", scan_result_json)
 
     modified_html = original_html.replace(
         '</script>',
@@ -277,104 +251,79 @@ function loadLastReport() {{}}
     return modified_html
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
 # MAIN APP
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
 def main():
-    # ── Render the main page ─────────────────────────────────────────────
-    html_content = build_full_html()
-    components.html(html_content, height=900, scrolling=True)
+    # -- Check for scan request via query params (set by parent listener)
+    params = st.query_params
+    if params.get("aegis_scan") == "1":
+        scan_url = params.get("scan_url", "")
+        scan_mode = params.get("scan_mode", "standard")
+        scan_preset = params.get("scan_preset", "")
+        scan_token = params.get("scan_token", "")
+        scan_cookie = params.get("scan_cookie", "")
+        scan_user = params.get("scan_user", "")
+        scan_pass = params.get("scan_pass", "")
 
-    # ── Streamlit-native scan form (below the iframe) ────────────────────
+        st.query_params.clear()
+
+        with st.status(f"Scanning {scan_url}...", expanded=True) as status:
+            progress = st.progress(0, text="Initializing scanner...")
+            log_area = st.empty()
+            progress.progress(10, text="Running scanner...")
+            lines, md = run_scan_internal(
+                scan_url, scan_mode, scan_preset,
+                scan_token, scan_cookie, scan_user, scan_pass
+            )
+            progress.progress(100, text="Scan complete!")
+            if lines:
+                log_area.code('\n'.join(lines[-30:]))
+            status.update(label="Scan complete!", state="complete")
+
+        st.session_state.scan_result = {
+            "done": True,
+            "url": scan_url,
+            "mode": scan_mode,
+            "lines": lines,
+            "markdown": md,
+            "error": "" if md else "No report generated",
+        }
+        st.session_state.scan_log = lines
+        st.session_state.scan_report_md = md
+        st.rerun()
+
+    # -- Inject a message listener in the PARENT frame (NOT the iframe)
+    # This script runs in Streamlit's main document context.
+    # When it receives a postMessage from the iframe, it navigates
+    # to the same page with query params, triggering a Streamlit rerun.
     st.markdown("""
-    <style>
-    .scan-form-wrapper {
-        background: linear-gradient(135deg, #0a0e17 0%, #111827 100%);
-        border: 1px solid #1e3a5f;
-        border-radius: 8px;
-        padding: 24px;
-        margin-top: 8px;
-    }
-    .scan-form-wrapper h3 {
-        color: #00d4ff;
-        font-family: 'JetBrains Mono', 'Courier New', monospace;
-        font-size: 14px;
-        letter-spacing: 2px;
-        margin-bottom: 16px;
-    }
-    </style>
-    <div class="scan-form-wrapper">
-        <h3>🛡 AEGIS SCANNER — LAUNCH PANEL</h3>
-    </div>
+    <script>
+    window.addEventListener('message', function(event) {
+        var d = event.data;
+        if (!d || d.type !== 'aegis_run_scan') return;
+        var params = new URLSearchParams();
+        params.set('aegis_scan', '1');
+        params.set('scan_url', d.scan_url || '');
+        params.set('scan_mode', d.scan_mode || 'standard');
+        params.set('scan_preset', d.scan_preset || '');
+        params.set('scan_token', d.scan_token || '');
+        params.set('scan_cookie', d.scan_cookie || '');
+        params.set('scan_user', d.scan_user || '');
+        params.set('scan_pass', d.scan_pass || '');
+        window.location.href = window.location.pathname + '?' + params.toString();
+    });
+    </script>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([3, 1, 1])
-    with col1:
-        scan_url = st.text_input("🎯 Target URL", placeholder="https://target.example.com", key="scan_url_input")
-    with col2:
-        scan_mode = st.selectbox("Mode", ["standard", "deep"], key="scan_mode_input")
-    with col3:
-        scan_preset = st.selectbox("Preset", ["(none)", "juice_shop", "dvwa", "webgoat"], key="scan_preset_input")
-
-    with st.expander("🔐 Authentication (optional)"):
-        ac1, ac2 = st.columns(2)
-        with ac1:
-            s_token = st.text_input("Bearer Token", key="s_token")
-            s_user = st.text_input("Username", key="s_user")
-        with ac2:
-            s_cookie = st.text_input("Cookie", key="s_cookie")
-            s_pass = st.text_input("Password", type="password", key="s_pass")
-
-    if st.button("▶  LAUNCH SCAN", use_container_width=True, type="primary"):
-        if not scan_url:
-            st.error("Enter a target URL")
-        elif not scan_url.startswith(("http://", "https://")):
-            st.error("URL must start with http:// or https://")
-        else:
-            preset = scan_preset if scan_preset != "(none)" else ""
-            with st.status(f"🔍 Scanning {scan_url}...", expanded=True) as status:
-                progress = st.progress(0, text="Initializing scanner...")
-                log_area = st.empty()
-
-                progress.progress(10, text="Running scanner...")
-                lines, md = run_scan_internal(
-                    scan_url, scan_mode, preset,
-                    s_token, s_cookie, s_user, s_pass
-                )
-                progress.progress(100, text="Scan complete!")
-
-                if lines:
-                    log_area.code('\n'.join(lines[-30:]))
-
-                status.update(label="✅ Scan complete!", state="complete")
-
-            # Store results for the iframe to pick up on next render
-            st.session_state.scan_result = {
-                "done": True,
-                "url": scan_url,
-                "mode": scan_mode,
-                "lines": lines,
-                "markdown": md,
-                "error": "" if md else "No report generated",
-            }
-            st.session_state.scan_log = lines
-            st.session_state.scan_report_md = md
-
-            # Show report directly in Streamlit
-            if md:
-                st.markdown("---")
-                st.markdown("### 📋 Scan Report")
-                st.markdown(md)
-            else:
-                st.warning("No report was generated. Check the log above for errors.")
-
-            # Rerun to inject results into iframe
-            st.rerun()
+    # -- Render the main page
+    html_content = build_full_html()
+    components.html(html_content, height=900, scrolling=True)
 
     # Show last report if available
     if st.session_state.scan_report_md:
         st.markdown("---")
-        st.markdown("### 📋 Latest Scan Report")
+        st.markdown("### Latest Scan Report")
         with st.expander("View Full Report", expanded=False):
             st.markdown(st.session_state.scan_report_md)
 
@@ -385,4 +334,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
