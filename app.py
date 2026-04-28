@@ -11,6 +11,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 import subprocess, os, sys, json, hashlib, glob, re, time, datetime, threading, io
 
+# ── Shared user data layer ───────────────────────────────────────────────────
+from user_store import load_users, save_users, hash_pw, ensure_admin, invalidate_cache
+
 # ── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 USERS_FILE  = os.path.join(BASE_DIR, "users.json")
@@ -43,25 +46,9 @@ iframe { border:none !important; }
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# USER STORE
+# USER STORE — powered by shared user_store.py
 # ══════════════════════════════════════════════════════════════════════════════
-def _hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
-
-def _load_users():
-    if not os.path.exists(USERS_FILE): return {}
-    try:
-        with open(USERS_FILE, encoding="utf-8") as f: return json.load(f)
-    except: return {}
-
-def _save_users(u):
-    with open(USERS_FILE, "w", encoding="utf-8") as f: json.dump(u, f, indent=2)
-
-def _ensure_admin():
-    u = _load_users()
-    if not any(v.get("role")=="admin" for v in u.values()):
-        u["admin@aegis.local"] = {"email":"admin@aegis.local","pw_hash":_hash_pw("Admin@1234"),"role":"admin"}
-        _save_users(u)
-_ensure_admin()
+ensure_admin()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SESSION STATE
@@ -83,27 +70,40 @@ def run_scan_internal(target_url, mode, preset, token, cookie, username, passwor
     if username: cmd += ["--username", username]
     if password: cmd += ["--password", password]
 
-    start_t = time.time()
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, cwd=BASE_DIR, timeout=1800)
-        lines = [l for l in proc.stdout.split('\n') if l.strip()]
+        raw_stdout = proc.stdout or ""
+        lines = [l for l in raw_stdout.split('\n') if l.strip()]
     except subprocess.TimeoutExpired:
         lines = ["[!] Scan timed out after 30 minutes"]
+        raw_stdout = ""
     except FileNotFoundError:
         lines = ["[!] scanner.py not found"]
+        raw_stdout = ""
     except Exception as e:
         lines = [f"[!] Error: {e}"]
+        raw_stdout = ""
 
-    # Find newest report
-    reports = sorted(
-        [f for f in glob.glob(os.path.join(REPORTS_DIR, "*.md"))
-         if os.path.getmtime(f) >= start_t - 2],
-        key=os.path.getmtime
-    )
+    # Extract report markdown from stdout (between delimiters)
     md = ""
-    if reports:
-        with open(reports[-1], encoding="utf-8") as f:
-            md = f.read()
+    if "===AEGIS_REPORT_START===" in raw_stdout and "===AEGIS_REPORT_END===" in raw_stdout:
+        md = raw_stdout.split("===AEGIS_REPORT_START===", 1)[1].split("===AEGIS_REPORT_END===", 1)[0].strip()
+
+    # Fallback: try to find report file on disk (works locally)
+    if not md:
+        start_t = time.time()
+        reports = sorted(
+            [f for f in glob.glob(os.path.join(REPORTS_DIR, "*.md"))
+             if os.path.getmtime(f) >= start_t - 30],
+            key=os.path.getmtime
+        )
+        if reports:
+            with open(reports[-1], encoding="utf-8") as f:
+                md = f.read()
+
+    # Filter out the report delimiters from the log lines shown to the user
+    lines = [l for l in lines if "===AEGIS_REPORT" not in l and not l.startswith("# Security Assessment")]
+
     return lines, md
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -125,8 +125,8 @@ def build_full_html():
     with open(html_path, encoding="utf-8") as f:
         original_html = f.read()
 
-    # Get users for client-side auth
-    users = _load_users()
+    # Get users for client-side auth (reads from shared store)
+    users = load_users()
     users_json = json.dumps({
         email: {"email": u["email"], "pw_hash": u["pw_hash"], "role": u.get("role","user")}
         for email, u in users.items()
@@ -453,7 +453,7 @@ def main():
         # Admin section
         st.markdown("---")
         st.markdown("### 👤 User Management")
-        users = _load_users()
+        users = load_users()
         for email, u in users.items():
             col1, col2 = st.columns([3,1])
             with col1:
@@ -465,15 +465,15 @@ def main():
             new_role = st.selectbox("Role", ["user", "admin"], key="new_role")
             if st.button("Add User"):
                 if new_email and new_pass and len(new_pass) >= 6:
-                    users = _load_users()
+                    users = load_users()
                     email_key = new_email.strip().lower()
                     if email_key not in users:
                         users[email_key] = {
                             "email": email_key,
-                            "pw_hash": _hash_pw(new_pass),
+                            "pw_hash": hash_pw(new_pass),
                             "role": new_role
                         }
-                        _save_users(users)
+                        save_users(users, commit_msg=f"Add user {email_key} via main page")
                         st.success(f"Added {email_key}")
                         st.rerun()
                     else:
