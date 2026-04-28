@@ -11,7 +11,13 @@ Run as part of the multipage app:  streamlit run app.py
 """
 
 import streamlit as st
-import json, os, hashlib, time, datetime, random
+import json, os, hashlib, time, datetime, random, base64
+
+try:
+    from github import Github, GithubException
+    _PYGITHUB_INSTALLED = True
+except ImportError:
+    _PYGITHUB_INSTALLED = False
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -328,13 +334,66 @@ def _load_users() -> dict:
 
 
 def _save_users(users: dict):
-    """Write users.json. Will silently fail on a read-only filesystem."""
+    """Write users.json locally. Will silently fail on a read-only filesystem."""
     try:
         with open(USERS_FILE, "w", encoding="utf-8") as f:
             json.dump(users, f, indent=2)
         return True
     except OSError:
         return False
+
+
+def _github_available() -> bool:
+    """Return True if PyGithub is installed and GitHub secrets are configured."""
+    if not _PYGITHUB_INSTALLED:
+        return False
+    try:
+        _ = st.secrets["GITHUB_TOKEN"]
+        _ = st.secrets["GITHUB_REPO"]
+        return True
+    except (KeyError, FileNotFoundError):
+        return False
+
+
+def _push_users_to_github(users: dict, commit_msg: str = "Update users.json via AEGIS Admin") -> tuple[bool, str]:
+    """
+    Commit the current users dict to users.json in the GitHub repo.
+    Returns (success: bool, message: str).
+    """
+    if not _github_available():
+        return False, "GitHub integration not configured (missing GITHUB_TOKEN / GITHUB_REPO secrets)."
+
+    try:
+        g = Github(st.secrets["GITHUB_TOKEN"])
+        repo = g.get_repo(st.secrets["GITHUB_REPO"])
+        file_path = "users.json"
+        new_content = json.dumps(users, indent=2)
+
+        # Get the current file to obtain its SHA (required for updates)
+        try:
+            contents = repo.get_contents(file_path, ref=repo.default_branch)
+            repo.update_file(
+                path=file_path,
+                message=commit_msg,
+                content=new_content,
+                sha=contents.sha,
+                branch=repo.default_branch,
+            )
+        except Exception:
+            # File doesn't exist yet — create it
+            repo.create_file(
+                path=file_path,
+                message=commit_msg,
+                content=new_content,
+                branch=repo.default_branch,
+            )
+
+        return True, f"✅ Committed to `{st.secrets['GITHUB_REPO']}` ({repo.default_branch})"
+
+    except GithubException as e:
+        return False, f"GitHub API error: {e.data.get('message', str(e))}"
+    except Exception as e:
+        return False, f"Unexpected error: {e}"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -441,15 +500,25 @@ def _render_scanner():
 def _render_users():
     st.subheader("👥  User Management")
 
-    # ── Read-only filesystem warning ─────────────────────────────────────
-    st.warning(
-        "🔒 **Streamlit Cloud has a read-only filesystem.**  \n"
-        "Any user changes made here are **ephemeral** — they survive only until "
-        "the next app restart / dyno cycle.  \n\n"
-        "**Permanent changes require a database (e.g. Supabase, Firebase) or a "
-        "GitHub commit to `users.json`.**",
-        icon="⚠️",
-    )
+    gh_ok = _github_available()
+
+    # ── GitHub integration status ────────────────────────────────────────
+    if gh_ok:
+        st.success(
+            "🔗 **GitHub auto-commit enabled.**  \n"
+            "User changes will be pushed to `" + st.secrets["GITHUB_REPO"] + "` automatically.",
+            icon="✅",
+        )
+    else:
+        st.warning(
+            "🔒 **Streamlit Cloud has a read-only filesystem.**  \n"
+            "Any user changes made here are **ephemeral** — they survive only until "
+            "the next app restart / dyno cycle.  \n\n"
+            "**To enable auto-commit**, add `GITHUB_TOKEN` and `GITHUB_REPO` to your "
+            "`st.secrets`, and install `PyGithub`.  \n"
+            "Otherwise, permanent changes require a manual GitHub commit to `users.json`.",
+            icon="⚠️",
+        )
 
     users = _load_users()
 
@@ -490,15 +559,21 @@ def _render_users():
                     "pw_hash": _hash_pw(au_pass),
                     "role": au_role,
                 }
-                ok = _save_users(users)
-                if ok:
-                    st.success(f"✅ Added **{email_key}** as `{au_role}`.")
-                    st.rerun()
-                else:
-                    st.error(
-                        "❌ Could not write to `users.json` — filesystem is read-only.  \n"
-                        "Commit the change to GitHub or use a database."
+                _save_users(users)  # local write (best-effort)
+
+                # Push to GitHub if configured
+                if gh_ok:
+                    pushed, msg = _push_users_to_github(
+                        users,
+                        commit_msg=f"Add user {email_key} via AEGIS Admin",
                     )
+                    if pushed:
+                        st.success(f"✅ Added **{email_key}** as `{au_role}`.  \n{msg}")
+                    else:
+                        st.warning(f"User added locally but GitHub push failed: {msg}")
+                else:
+                    st.success(f"✅ Added **{email_key}** as `{au_role}` (local only — ephemeral).")
+                st.rerun()
 
     # ── Remove User ──────────────────────────────────────────────────────
     with st.expander("🗑️  Remove User", expanded=False):
@@ -516,15 +591,21 @@ def _render_users():
                     st.error("🚫 Cannot remove the last admin account.")
                 else:
                     del users[remove_email]
-                    ok = _save_users(users)
-                    if ok:
-                        st.success(f"Removed `{remove_email}`.")
-                        st.rerun()
-                    else:
-                        st.error(
-                            "❌ Could not write to `users.json` — filesystem is read-only.  \n"
-                            "Commit the change to GitHub or use a database."
+                    _save_users(users)  # local write (best-effort)
+
+                    # Push to GitHub if configured
+                    if gh_ok:
+                        pushed, msg = _push_users_to_github(
+                            users,
+                            commit_msg=f"Remove user {remove_email} via AEGIS Admin",
                         )
+                        if pushed:
+                            st.success(f"Removed `{remove_email}`.  \n{msg}")
+                        else:
+                            st.warning(f"User removed locally but GitHub push failed: {msg}")
+                    else:
+                        st.success(f"Removed `{remove_email}` (local only — ephemeral).")
+                    st.rerun()
         else:
             st.info("No users to remove.")
 
