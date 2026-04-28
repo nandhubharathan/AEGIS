@@ -109,16 +109,16 @@ def hash_pw(pw: str) -> str:
     return hashlib.sha256(pw.encode()).hexdigest()
 
 
-def load_users() -> dict:
+def load_users(force_refresh: bool = False) -> dict:
     """
     Load users from the best available source.
 
-    1. Session-state cache (instant, same session)
+    1. Session-state cache (instant, same session) — skipped if force_refresh
     2. GitHub API          (cross-session, real-time)
     3. Local users.json    (fallback)
     """
     # 1) Session-state cache — immediate for same-session page switches
-    if "_users_cache" in st.session_state and st.session_state["_users_cache"]:
+    if not force_refresh and "_users_cache" in st.session_state and st.session_state["_users_cache"]:
         return st.session_state["_users_cache"]
 
     # 2) GitHub API — authoritative on Cloud
