@@ -1,6 +1,5 @@
 streamlit
-fastapi
-uvicorn
+flask
+flask-cors
 requests
-pandas
-# Add other scanning libraries you actually use, like python-nmap
+# any other libraries like nmap or pandas
