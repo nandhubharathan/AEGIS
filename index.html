@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AEGIS — Security Assessment Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04070d;--surface:#080e18;--surface2:#0c1520;
+  --border:rgba(0,200,255,.08);--border2:rgba(0,200,255,.15);
+  --cyan:#00c8ff;--cyan-dim:rgba(0,200,255,.1);--cyan-glow:rgba(0,200,255,.25);
+  --red:#ff3a5c;--orange:#ff8040;--yellow:#ffc940;--green:#00e676;
+  --dim:#2a3d52;--body:#5a7a94;--bright:#a8c8e0;--white:#ddeeff;
+  --mono:'JetBrains Mono',monospace;--display:'Orbitron',sans-serif;--sans:'Inter',sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--body);font-family:var(--sans);font-size:17px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.grid-bg::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 45% at 50% 0%,rgba(0,200,255,.06) 0%,transparent 70%);pointer-events:none}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px}
+
+/* ══ LANDING PAGE ══ */
+#p0{position:relative;justify-content:center;align-items:center;overflow:hidden}
+.land-bg-orb{position:absolute;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(0,200,255,.07) 0%,transparent 70%);top:-100px;left:-150px}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(176,122,255,.05) 0%,transparent 70%);bottom:-80px;right:-100px}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(0,230,118,.04) 0%,transparent 70%);top:40%;left:60%}
+.land-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;max-width:520px;padding:24px}
+.land-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:36px;justify-content:center}
+.land-pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:pdot 2s ease infinite;flex-shrink:0}
+.land-eyebrow-txt{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--cyan);opacity:.7}
+.land-logo{font-family:var(--display);font-size:clamp(80px,16vw,136px);color:var(--white);letter-spacing:8px;line-height:.92;margin-bottom:0;position:relative}
+.land-logo::after{content:'';display:block;width:80px;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);margin:18px auto 0}
+.land-tagline{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--dim);margin-top:18px;margin-bottom:48px;line-height:1.8}
+.land-signin-card{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:40px 44px;position:relative;overflow:hidden}
+.land-signin-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.land-signin-title{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:20px;text-transform:uppercase}
+.land-fields{display:flex;flex-direction:column;gap:14px;margin-bottom:20px}
+.land-field{display:flex;flex-direction:column;gap:6px}
+.land-field label{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+.land-input{background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:14px;padding:13px 16px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.land-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim)}
+.land-input::placeholder{color:var(--dim);opacity:.5}
+.land-input.err{border-color:var(--red)!important}
+.btn-signin{width:100%;position:relative;overflow:hidden;background:none;border:1.5px solid var(--cyan);color:var(--cyan);font-family:var(--display);font-size:15px;letter-spacing:3px;padding:15px;border-radius:3px;cursor:pointer;transition:all .25s;margin-top:4px}
+.btn-signin::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:scaleX(0);transform-origin:left;transition:transform .25s ease;z-index:0}
+.btn-signin:hover::before{transform:scaleX(1)}.btn-signin:hover{color:var(--bg)}.btn-signin span{position:relative;z-index:1}
+.land-err{font-family:var(--mono);font-size:11px;color:var(--red);text-align:center;margin-top:8px;min-height:16px}
+.land-footer{margin-top:32px;font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);opacity:.5}
+.land-divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.land-divider-line{flex:1;height:1px;background:var(--border)}
+.land-divider-txt{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim)}
+
+/* ══ PAGE SYSTEM ══ */
+.page{display:none;min-height:100vh;flex-direction:column;animation:fadeUp .4s ease both}
+.page.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ TOPBAR ══ */
+.topbar{display:flex;align-items:center;padding:20px 44px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo-mark{font-family:var(--display);font-size:20px;color:var(--cyan);letter-spacing:3px;line-height:1}
+.logo-sub{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--dim);margin-top:1px}
+.tb-spacer{flex:1}
+.step-indicators{display:flex;gap:5px;align-items:center}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--dim);transition:all .3s}
+.step-dot.done{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.step-dot.active{background:var(--cyan);width:18px;border-radius:3px;box-shadow:0 0 10px var(--cyan)}
+.step-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);margin-left:8px}
+
+/* ══ CARD PAGES (1-3) ══ */
+.page-body{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.card{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:48px 52px 42px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+
+.section-tag{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);opacity:.7;margin-bottom:8px}
+.card-title{font-family:var(--display);font-size:42px;color:var(--white);letter-spacing:2px;line-height:.98;margin-bottom:8px}
+.card-sub{font-family:var(--sans);font-size:14px;color:var(--body);line-height:1.65;margin-bottom:32px}
+
+/* progress track */
+.prog-track{display:flex;gap:0;margin-bottom:30px}
+.prog-step{flex:1;display:flex;flex-direction:column;gap:4px;position:relative}
+.prog-step:not(:last-child)::after{content:'';position:absolute;top:6px;left:calc(50% + 9px);right:calc(-50% + 9px);height:1px;background:var(--dim);transition:background .4s}
+.prog-step.done::after{background:var(--cyan)}
+.prog-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--dim);background:var(--bg);margin:0 auto;transition:all .3s;position:relative;z-index:1}
+.prog-step.done .prog-dot{border-color:var(--cyan);background:var(--cyan)}
+.prog-step.active .prog-dot{border-color:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);animation:pdot 2s ease infinite}
+@keyframes pdot{0%,100%{box-shadow:0 0 6px var(--cyan-glow)}50%{box-shadow:0 0 18px var(--cyan-glow),0 0 36px var(--cyan-dim)}}
+.prog-lbl{font-family:var(--mono);font-size:7px;letter-spacing:1px;text-align:center;color:var(--dim);transition:color .3s}
+.prog-step.active .prog-lbl{color:var(--cyan)}.prog-step.done .prog-lbl{color:var(--body)}
+
+/* fields */
+.field{margin-bottom:22px}
+.field-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:7px;display:block;transition:color .2s}
+.field:focus-within .field-label{color:var(--cyan)}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:15px;padding:12px 15px;outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim)}
+.field input::placeholder,.field textarea::placeholder{color:var(--dim);opacity:.6}
+.field select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%232a3d52'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+.field select option{background:var(--surface)}
+.field.err input,.field.err select{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(255,58,92,.1)!important}
+.field.err .field-label{color:var(--red)!important}
+.err-msg{font-family:var(--mono);font-size:11px;color:var(--red);margin-top:4px;display:none}
+.field.err .err-msg{display:block}
+.field textarea{resize:vertical;min-height:72px;line-height:1.6}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* radio */
+.radio-group{display:flex;flex-direction:column;gap:8px}
+.radio-opt{display:flex;align-items:center;gap:12px;padding:11px 15px;border:1px solid var(--dim);border-radius:3px;cursor:pointer;transition:all .2s}
+.radio-opt:hover{border-color:var(--body)}
+.radio-opt.sel{border-color:var(--cyan);background:var(--cyan-dim)}
+.radio-opt input[type=radio]{display:none}
+.radio-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--dim);transition:all .2s;flex-shrink:0}
+.radio-opt.sel .radio-dot{border-color:var(--cyan);background:var(--cyan)}
+.radio-label{font-family:var(--mono);font-size:12px;color:var(--body);transition:color .2s;flex:1}
+.radio-opt.sel .radio-label{color:var(--white)}
+.radio-desc{font-family:var(--sans);font-size:12px;color:var(--dim)}
+
+/* checkbox */
+.check-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
+.chk-box{width:15px;height:15px;border:1px solid var(--dim);border-radius:2px;cursor:pointer;flex-shrink:0;margin-top:2px;transition:all .2s;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.chk-box.checked{background:var(--cyan);border-color:var(--cyan)}
+.chk-box.checked::after{content:'✓';color:var(--bg);font-size:10px;font-weight:700;line-height:1}
+.chk-text{font-family:var(--sans);font-size:13px;color:var(--body);line-height:1.5;cursor:pointer}
+.chk-text a{color:var(--cyan);text-decoration:none}.chk-text a:hover{text-decoration:underline}
+
+/* buttons */
+.btn-row{display:flex;gap:10px;margin-top:28px;align-items:center}
+.btn-primary{position:relative;overflow:hidden;background:none;border:1.5px solid var(--cyan);color:var(--cyan);font-family:var(--display);font-size:15px;letter-spacing:3px;padding:14px 38px;border-radius:3px;cursor:pointer;transition:all .25s;flex-shrink:0}
+.btn-primary::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:scaleX(0);transform-origin:left;transition:transform .25s ease;z-index:0}
+.btn-primary:hover::before{transform:scaleX(1)}.btn-primary:hover{color:var(--bg)}
+.btn-primary span{position:relative;z-index:1}
+.btn-primary:disabled{opacity:.3;cursor:not-allowed}.btn-primary:disabled::before{display:none}.btn-primary:disabled:hover{color:var(--cyan)}
+.btn-back{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:10px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-back:hover{border-color:var(--body);color:var(--body)}
+
+/* welcome badge */
+.welcome-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:2px;padding:4px 11px;margin-bottom:22px}
+.wb-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:pdot 2s ease infinite}
+.wb-text{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--cyan);opacity:.8}
+
+/* ══ PAGE 4 — SCANNER ══ */
+#p4 .page-body{align-items:flex-start;padding:0}
+.scanner-wrap{width:100%;max-width:960px;margin:0 auto;padding:32px 28px}
+.scan-hdr{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+.sh-logo{font-family:var(--display);font-size:20px;color:var(--cyan);letter-spacing:2px}
+.sh-co{font-family:var(--mono);font-size:10px;color:var(--body);border-left:1px solid var(--dim);padding-left:12px;margin-left:4px}
+.sh-tag{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);border:1px solid var(--dim);padding:2px 8px;border-radius:2px;margin-left:auto}
+.scan-panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:24px 26px 20px}
+.sp-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.url-row{display:flex;gap:10px;margin-bottom:16px}
+.url-input{flex:1;background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:15px;padding:11px 15px;outline:none;transition:all .2s}
+.url-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim)}.url-input::placeholder{color:var(--dim)}.url-input.err{border-color:var(--red)}
+.mode-row{display:flex;gap:10px;margin-bottom:18px}
+.mcard{flex:1;border:1.5px solid var(--border);border-radius:3px;padding:11px 13px;cursor:pointer;transition:all .2s;background:var(--bg)}
+.mcard:hover{border-color:var(--dim)}.mcard.sel{border-color:var(--cyan);background:rgba(0,200,255,.03)}.mcard.sel.deep{border-color:#b07aff;background:rgba(176,122,255,.03)}
+.mtitle{font-family:var(--display);font-size:14px;color:var(--body);letter-spacing:1px;margin-bottom:4px}
+.mcard.sel .mtitle{color:var(--cyan)}.mcard.sel.deep .mtitle{color:#b07aff}
+.mdesc{font-size:11px;color:var(--dim);line-height:1.6}
+.mbadges{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
+.mb{font-size:10px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,.03);color:var(--dim);border:1px solid rgba(255,255,255,.05)}
+.mcard.sel .mb{background:rgba(0,200,255,.07);color:var(--cyan);border-color:rgba(0,200,255,.14)}.mcard.sel.deep .mb{background:rgba(176,122,255,.07);color:#b07aff;border-color:rgba(176,122,255,.14)}
+.auth-row{display:flex;gap:9px;flex-wrap:wrap;padding-top:15px;border-top:1px solid var(--border)}
+.afield{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px}
+.alabel{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.ainput{background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:13px;padding:8px 11px;outline:none;transition:all .2s}
+.ainput:focus{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan-dim)}.ainput::placeholder{color:var(--dim)}
+.action-row{display:flex;gap:12px;align-items:center;margin-top:16px}
+.btn-launch{position:relative;overflow:hidden;background:none;border:1.5px solid var(--cyan);color:var(--cyan);font-family:var(--display);font-size:14px;letter-spacing:3px;padding:12px 36px;border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-launch::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:scaleX(0);transform-origin:left;transition:transform .2s ease;z-index:0}
+.btn-launch:hover::before{transform:scaleX(1)}.btn-launch:hover{color:var(--bg)}.btn-launch span{position:relative;z-index:1}
+.btn-launch:disabled{opacity:.3;cursor:not-allowed}.btn-launch:disabled::before{display:none}.btn-launch:disabled:hover{color:var(--cyan)}
+.btn-launch.dp{border-color:#b07aff;color:#b07aff}.btn-launch.dp::before{background:#b07aff}
+.sline{font-size:12px;color:var(--dim);transition:color .3s;flex:1;font-family:var(--mono)}
+.sline.run{color:var(--cyan);animation:pulse 1.4s ease infinite}.sline.run.dp{color:#b07aff}.sline.done{color:var(--green)}.sline.err{color:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.dots{display:none;gap:4px;align-items:center}.dots.show{display:flex}
+.dots span{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:dot 1.2s ease infinite}.dots.dp span{background:#b07aff}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1}}
+.logbox{display:none;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-top:12px}.logbox.show{display:block}
+.loghdr{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.logtitle{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);flex:1}
+.livebadge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);animation:pulse 1.4s ease infinite}
+.livebadge.off{animation:none;background:rgba(255,255,255,.03);color:var(--dim);border-color:var(--border)}
+.lpageinfo{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap}
+.lnav{display:flex;gap:4px}
+.lnbtn{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:2px;cursor:pointer;transition:all .15s}
+.lnbtn:hover:not(:disabled){border-color:var(--body);color:var(--body)}.lnbtn:disabled{opacity:.3;cursor:not-allowed}
+.logsearch-row{display:flex;gap:6px;padding:7px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.lsearch{flex:1;min-width:100px;background:var(--bg);border:1px solid var(--dim);border-radius:2px;color:var(--white);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none}
+.lsearch:focus{border-color:var(--cyan)}
+.lmatch{font-family:var(--mono);font-size:11px;color:var(--dim);align-self:center;white-space:nowrap}
+.lfbtns{display:flex;gap:4px}
+.lfbtn{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:2px;cursor:pointer;transition:all .15s}
+.lfbtn.on{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,.08)}.lfbtn.won{border-color:var(--orange);color:var(--orange);background:rgba(255,128,64,.08)}.lfbtn.eon{border-color:var(--red);color:var(--red);background:rgba(255,58,92,.08)}
+.logbody{padding:10px 15px;min-height:70px;max-height:200px;overflow-y:auto;font-family:var(--mono);font-size:13px;line-height:1.9;white-space:pre-wrap}
+.logftr{display:flex;align-items:center;gap:10px;padding:5px 12px;border-top:1px solid var(--border);flex-wrap:wrap}
+.ltotal{font-family:var(--mono);font-size:9px;color:var(--dim);flex:1}
+.ljump{display:flex;gap:5px;align-items:center}.ljlabel{font-family:var(--mono);font-size:9px;color:var(--dim)}
+.ljinput{width:40px;background:var(--bg);border:1px solid var(--dim);border-radius:2px;color:var(--white);font-family:var(--mono);font-size:10px;padding:2px 5px;outline:none;text-align:center}
+.ll-ok{color:var(--green)}.ll-warn{color:var(--orange)}.ll-err{color:var(--red)}.ll-info{color:var(--body)}.ll-dim{color:var(--dim)}
+.ll-hl{background:rgba(255,201,64,.18);border-radius:2px}
+.errbox{background:rgba(255,58,92,.07);border:1px solid rgba(255,58,92,.2);border-radius:3px;padding:12px 14px;color:var(--red);font-family:var(--mono);font-size:13px;line-height:1.7;display:none;margin-top:12px}
+
+/* ══ PROGRESS BAR ══ */
+.progbar-wrap{display:none;margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 16px}
+.progbar-wrap.show{display:block}
+.pb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pb-label{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:1px}
+.pb-pct{font-family:var(--display);font-size:22px;color:var(--white);letter-spacing:1px}
+.pb-track{width:100%;height:6px;background:var(--dim);border-radius:3px;overflow:hidden;margin-bottom:8px;position:relative}
+.pb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),#00ffcc);transition:width .5s ease;position:relative}
+.pb-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.35) 50%,transparent 100%);animation:pbShimmer 1.4s linear infinite}
+.pb-fill.dp{background:linear-gradient(90deg,#b07aff,#ff80ab)}
+@keyframes pbShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.pb-steps{display:flex;gap:0;margin-top:6px}
+.pb-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+.pb-step:not(:last-child)::after{content:'';position:absolute;top:5px;left:50%;right:-50%;height:1px;background:var(--dim)}
+.pb-step.done::after{background:var(--cyan)}
+.pb-sdot{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--dim);background:var(--bg);position:relative;z-index:1;transition:all .4s}
+.pb-step.done .pb-sdot{border-color:var(--cyan);background:var(--cyan)}
+.pb-step.active .pb-sdot{border-color:var(--cyan);animation:pdot 1.5s ease infinite}
+.pb-slbl{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--dim);transition:color .3s;text-align:center}
+.pb-step.done .pb-slbl{color:var(--body)}.pb-step.active .pb-slbl{color:var(--cyan)}
+.pb-eta{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:right;margin-top:4px}
+
+/* ══ VIRUSTOTAL SECTION ══ */
+.vt-section{margin-top:16px;padding-top:15px;border-top:1px solid var(--border)}
+.vt-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.vt-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.vt-badge{font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:2px;background:rgba(255,128,0,.1);color:var(--orange);border:1px solid rgba(255,128,0,.25);letter-spacing:1px}
+.vt-toggle{display:flex;align-items:center;gap:9px;cursor:pointer;padding:8px 12px;border:1px solid var(--border);border-radius:3px;transition:all .2s;margin-bottom:10px}
+.vt-toggle:hover{border-color:var(--dim)}
+.vt-toggle.on{border-color:var(--orange);background:rgba(255,128,0,.04)}
+.vt-sw{width:32px;height:17px;border-radius:9px;background:var(--dim);position:relative;transition:background .2s;flex-shrink:0}
+.vt-toggle.on .vt-sw{background:var(--orange)}
+.vt-sw::after{content:'';position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;transition:left .2s}
+.vt-toggle.on .vt-sw::after{left:18px}
+.vt-sw-lbl{font-family:var(--mono);font-size:11px;color:var(--dim);transition:color .2s}
+.vt-toggle.on .vt-sw-lbl{color:var(--orange)}
+.vt-desc{font-family:var(--sans);font-size:12px;color:var(--dim);line-height:1.5}
+.vt-fields{display:none;margin-top:10px}
+.vt-fields.show{display:flex;flex-direction:column;gap:8px}
+.vt-api-row{display:flex;gap:8px;align-items:flex-end}
+.vt-input{flex:1;background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:13px;padding:7px 11px;outline:none;transition:all .2s}
+.vt-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,128,0,.1)}.vt-input::placeholder{color:var(--dim);opacity:.6}
+.vt-check-opts{display:flex;gap:6px;flex-wrap:wrap}
+.vtc{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .15s}
+.vtc:hover{border-color:var(--body);color:var(--body)}.vtc.on{border-color:var(--orange);color:var(--orange);background:rgba(255,128,0,.08)}
+.vt-note{font-family:var(--mono);font-size:9px;color:var(--dim);line-height:1.6;padding:6px 10px;background:rgba(255,128,0,.03);border:1px solid rgba(255,128,0,.1);border-radius:3px}
+
+/* ══ VT RESULTS in report ══ */
+.vt-result-section{background:var(--surface);border:1px solid rgba(255,128,0,.2);border-radius:4px;margin-bottom:18px;overflow:hidden}
+.vtr-hdr{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border);background:rgba(255,128,0,.04)}
+.vtr-icon{font-size:18px}
+.vtr-title{font-family:var(--display);font-size:16px;color:var(--orange);letter-spacing:1px;flex:1}
+.vtr-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:2px;border:1px solid}
+.vtr-badge.clean{color:var(--green);border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.07)}
+.vtr-badge.threat{color:var(--red);border-color:rgba(255,58,92,.3);background:rgba(255,58,92,.07)}
+.vtr-badge.warn{color:var(--orange);border-color:rgba(255,128,0,.3);background:rgba(255,128,0,.07)}
+.vtr-body{padding:14px 16px}
+.vtr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.vtr-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:10px 13px}
+.vtr-stat-n{font-family:var(--display);font-size:28px;line-height:1;color:var(--white)}
+.vtr-stat-n.bad{color:var(--red)}.vtr-stat-n.warn{color:var(--orange)}.vtr-stat-n.ok{color:var(--green)}
+.vtr-stat-l{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:2px}
+.vtr-permalink{font-family:var(--mono);font-size:10px;color:var(--cyan);word-break:break-all;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;text-decoration:none;display:block}
+.vtr-permalink:hover{text-decoration:underline}
+.vtr-cats{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.vtr-cat{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;background:rgba(255,58,92,.1);color:var(--red);border:1px solid rgba(255,58,92,.2)}
+
+/* ══ PAGES 5-6 — REPORT / SOLUTIONS ══ */
+#p5 .page-body,#p6 .page-body{align-items:flex-start;padding:0}
+.report-wrap{width:100%;max-width:1020px;margin:0 auto;padding:32px 28px}
+.rpt-hdr{margin-bottom:24px}
+.rh-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.rh-logo{font-family:var(--display);font-size:20px;color:var(--cyan);letter-spacing:2px}
+.rh-tgt{font-family:var(--mono);font-size:10px;color:var(--body);border-left:1px solid var(--dim);padding-left:12px;margin-left:4px}
+.rh-acts{margin-left:auto;display:flex;gap:6px}
+.btn-sm{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:5px 11px;border-radius:2px;cursor:pointer;transition:all .15s}
+.btn-sm:hover{border-color:var(--body);color:var(--body)}.btn-sm.accent{border-color:var(--cyan);color:var(--cyan)}.btn-sm.accent:hover{background:var(--cyan);color:var(--bg)}
+
+/* score row */
+.score-row{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:22px}
+.risk-card{background:var(--surface);border:1px solid var(--border2);border-radius:3px;padding:14px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.risk-grade{font-family:var(--display);font-size:58px;line-height:1;letter-spacing:2px}
+.risk-grade.A{color:var(--green)}.risk-grade.B{color:#a0e060}.risk-grade.C{color:var(--yellow)}.risk-grade.D{color:var(--orange)}.risk-grade.F{color:var(--red)}
+.risk-lbl{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim)}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:13px 15px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.stat-card.sc-c::after{background:var(--red)}.stat-card.sc-h::after{background:var(--orange)}.stat-card.sc-m::after{background:var(--yellow)}.stat-card.sc-l::after{background:#4db8ff}.stat-card.sc-i::after{background:var(--dim)}
+.stat-num{font-family:var(--display);font-size:34px;line-height:1;letter-spacing:1px;color:var(--white)}
+.stat-card.sc-c .stat-num{color:var(--red)}.stat-card.sc-h .stat-num{color:var(--orange)}.stat-card.sc-m .stat-num{color:var(--yellow)}.stat-card.sc-l .stat-num{color:#4db8ff}
+.stat-lbl{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+
+/* tabs */
+.rpt-nav{display:flex;gap:0;border-bottom:1px solid var(--border);overflow-x:auto;margin-bottom:0}
+.rnav-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 16px;cursor:pointer;transition:all .15s;margin-bottom:-1px;white-space:nowrap}
+.rnav-btn:hover{color:var(--body)}.rnav-btn.act{color:var(--cyan);border-bottom-color:var(--cyan)}
+.rnav-cnt{margin-left:5px;background:rgba(0,200,255,.1);color:var(--cyan);border-radius:2px;padding:1px 5px;font-size:8px}
+.rtab-pages{margin-top:0}.rtab-pg{display:none;padding:20px 0}.rtab-pg.act{display:block}
+
+/* finding cards */
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+.fc:hover{border-color:var(--border2)}
+.fc.sev-critical{border-left:3px solid var(--red)}.fc.sev-high{border-left:3px solid var(--orange)}.fc.sev-medium{border-left:3px solid var(--yellow)}.fc.sev-low{border-left:3px solid #4db8ff}.fc.sev-info{border-left:3px solid var(--dim)}
+.fc-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+.fc-badge{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:2px 7px;border-radius:2px;text-transform:uppercase;flex-shrink:0}
+.sev-critical .fc-badge{background:rgba(255,58,92,.12);color:var(--red);border:1px solid rgba(255,58,92,.25)}
+.sev-high .fc-badge{background:rgba(255,128,64,.1);color:var(--orange);border:1px solid rgba(255,128,64,.22)}
+.sev-medium .fc-badge{background:rgba(255,201,64,.08);color:var(--yellow);border:1px solid rgba(255,201,64,.2)}
+.sev-low .fc-badge{background:rgba(77,184,255,.08);color:#4db8ff;border:1px solid rgba(77,184,255,.18)}
+.sev-info .fc-badge{background:rgba(255,255,255,.03);color:var(--dim);border:1px solid var(--border)}
+.fc-title{font-family:var(--mono);font-size:13px;color:var(--bright);flex:1;line-height:1.4}
+.fc-owasp{font-family:var(--mono);font-size:9px;color:var(--dim);padding:2px 6px;border:1px solid var(--border);border-radius:2px;white-space:nowrap}
+.fc-arr{font-size:12px;color:var(--dim);transition:transform .2s;flex-shrink:0}
+.fc.open .fc-arr{transform:rotate(180deg)}
+.fc-body{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.fc.open .fc-body{display:block}
+.fc-tbl{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+.fc-tbl td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.02);vertical-align:top;line-height:1.5}
+.fc-tbl td:first-child{font-family:var(--mono);color:var(--dim);width:115px;white-space:nowrap}
+.fc-tbl td:last-child{color:var(--body);word-break:break-word}
+.fc-tbl tr:last-child td{border-bottom:none}
+.fc-ev{margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:8px 11px;font-family:var(--mono);font-size:10px;color:var(--cyan);word-break:break-all}
+
+/* solution cards */
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:9px;overflow:hidden}
+.sc.sev-critical{border-left:3px solid var(--red)}.sc.sev-high{border-left:3px solid var(--orange)}.sc.sev-medium{border-left:3px solid var(--yellow)}.sc.sev-low{border-left:3px solid #4db8ff}
+.sc-hd{padding:13px 16px;display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+.sc-num{font-family:var(--display);font-size:17px;color:var(--dim);width:28px;flex-shrink:0}
+.sc-title{font-family:var(--mono);font-size:13px;color:var(--bright);flex:1}
+.sc-pri{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;border:1px solid;flex-shrink:0}
+.sev-critical .sc-pri{color:var(--red);border-color:rgba(255,58,92,.3)}.sev-high .sc-pri{color:var(--orange);border-color:rgba(255,128,64,.3)}.sev-medium .sc-pri{color:var(--yellow);border-color:rgba(255,201,64,.3)}.sev-low .sc-pri{color:#4db8ff;border-color:rgba(77,184,255,.3)}
+.sc-arr{font-size:12px;color:var(--dim);transition:transform .2s}
+.sc.open .sc-arr{transform:rotate(180deg)}
+.sc-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border)}.sc.open .sc-body{display:block}
+.sc-desc{font-family:var(--sans);font-size:14px;color:var(--body);line-height:1.65;margin-bottom:12px;padding-top:10px}
+.sc-steps-lbl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:7px}
+.sc-step{display:flex;gap:11px;padding:8px 0;border-bottom:1px solid var(--border)}
+.sc-step:last-child{border-bottom:none}
+.sc-step-n{font-family:var(--display);font-size:16px;color:var(--dim);width:20px;flex-shrink:0;text-align:right;padding-top:1px}
+.sc-step-txt{font-family:var(--sans);font-size:14px;color:var(--body);line-height:1.6;flex:1}
+.sc-code{margin-top:7px;background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:9px 12px;font-family:var(--mono);font-size:10px;color:var(--cyan);overflow-x:auto;white-space:pre}
+.sc-meta{margin-top:10px;font-family:var(--mono);font-size:9px;color:var(--dim);line-height:1.8}
+.sc-meta span{color:var(--body)}
+
+/* pagination */
+.rpbar{display:flex;align-items:center;gap:7px;margin-top:22px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap}
+.rpinfo{font-family:var(--mono);font-size:10px;color:var(--dim);flex:1}
+.rpbtn{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:10px;padding:4px 11px;border-radius:2px;cursor:pointer;transition:all .15s}
+.rpbtn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan)}.rpbtn:disabled{opacity:.3;cursor:not-allowed}
+.rpnums{display:flex;gap:3px;flex-wrap:wrap}
+.rpnum{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:10px;min-width:26px;height:22px;border-radius:2px;cursor:pointer;transition:all .15s;padding:0 3px}
+.rpnum:hover{border-color:var(--body);color:var(--body)}.rpnum.cur{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)}
+.rpdots{color:var(--dim);font-size:10px;padding:0 2px;line-height:22px}
+.empty-state{text-align:center;padding:50px 20px;color:var(--dim)}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.4}.empty-text{font-family:var(--mono);font-size:11px;letter-spacing:1px}
+
+/* ══ TOPBAR AUTH ITEMS ══ */
+.tb-user-lbl{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--dim);margin-right:6px}
+.tb-admin-btn{display:none;background:none;border:1px solid rgba(0,200,255,.3);color:var(--cyan);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:4px 11px;border-radius:2px;cursor:pointer;transition:all .15s;margin-right:6px}
+.tb-admin-btn:hover{background:var(--cyan-dim);border-color:var(--cyan)}
+.tb-logout-btn{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:4px 11px;border-radius:2px;cursor:pointer;transition:all .15s}
+.tb-logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ══ ADMIN PAGE ══ */
+#padmin .page-body{align-items:flex-start;padding:0}
+.admin-wrap{width:100%;max-width:860px;margin:0 auto;padding:36px 28px}
+.admin-hdr{margin-bottom:28px}
+.admin-title{font-family:var(--display);font-size:44px;color:var(--white);letter-spacing:2px;line-height:.9}
+.admin-sub{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px;margin-top:6px}
+.admin-section{background:var(--surface);border:1px solid var(--border2);border-radius:4px;margin-bottom:18px;overflow:hidden}
+.admin-section-hdr{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(0,200,255,.02)}
+.admin-section-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--cyan);flex:1}
+.admin-section-body{padding:20px}
+
+/* add-user form */
+.au-grid{display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end}
+.au-field{display:flex;flex-direction:column;gap:5px}
+.au-label{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.au-input{background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:13px;padding:8px 11px;outline:none;transition:all .2s;width:100%}
+.au-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim)}.au-input::placeholder{color:var(--dim);opacity:.5}
+.au-input.err{border-color:var(--red)!important}
+.au-select{background:var(--bg);border:1px solid var(--dim);border-radius:3px;color:var(--white);font-family:var(--mono);font-size:13px;padding:8px 11px;outline:none;transition:all .2s;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%232a3d52'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.au-select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim)}
+.au-select option{background:var(--surface)}
+.btn-add{background:none;border:1.5px solid var(--cyan);color:var(--cyan);font-family:var(--display);font-size:15px;letter-spacing:2px;padding:8px 22px;border-radius:3px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;white-space:nowrap}
+.btn-add::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:scaleX(0);transform-origin:left;transition:transform .2s ease;z-index:0}
+.btn-add:hover::before{transform:scaleX(1)}.btn-add:hover{color:var(--bg)}.btn-add span{position:relative;z-index:1}
+.au-msg{font-family:var(--mono);font-size:10px;margin-top:10px;min-height:16px}
+.au-msg.ok{color:var(--green)}.au-msg.err{color:var(--red)}
+
+/* user table */
+.utbl{width:100%;border-collapse:collapse}
+.utbl th{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border)}
+.utbl td{font-family:var(--mono);font-size:12px;color:var(--body);padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+.utbl tr:last-child td{border-bottom:none}
+.utbl tr:hover td{background:rgba(0,200,255,.02)}
+.role-badge{display:inline-block;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px;font-family:var(--mono)}
+.role-badge.admin{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.25)}
+.role-badge.user{background:rgba(255,255,255,.04);color:var(--dim);border:1px solid rgba(255,255,255,.08)}
+.btn-del{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 9px;border-radius:2px;cursor:pointer;transition:all .15s}
+.btn-del:hover{border-color:var(--red);color:var(--red);background:rgba(255,58,92,.06)}
+.btn-role{background:none;border:1px solid var(--dim);color:var(--dim);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 9px;border-radius:2px;cursor:pointer;transition:all .15s;margin-right:5px}
+.btn-role:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)}
+.utbl-empty{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;padding:24px;opacity:.6}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- ══ PAGE 0 — LANDING / SIGN IN ══ -->
+<div class="page active" id="p0">
+  <div class="land-bg-orb orb1"></div>
+  <div class="land-bg-orb orb2"></div>
+  <div class="land-bg-orb orb3"></div>
+  <div class="land-inner">
+    <div class="land-eyebrow">
+      <div class="land-pulse"></div>
+      <span class="land-eyebrow-txt">SECURITY ASSESSMENT PLATFORM</span>
+    </div>
+    <div class="land-logo">AEGIS</div>
+    <div class="land-tagline">OWASP TOP 10 · THREAT INTELLIGENCE · AUTOMATED PENTEST</div>
+    <div class="land-signin-card">
+      <div class="land-signin-title">Sign in to continue</div>
+      <div class="land-fields">
+        <div class="land-field">
+          <label for="si-email">Email Address</label>
+          <input class="land-input" id="si-email" type="email" placeholder="you@company.com" autocomplete="email"/>
+        </div>
+        <div class="land-field">
+          <label for="si-pass">Password</label>
+          <input class="land-input" id="si-pass" type="password" placeholder="••••••••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')signIn()"/>
+        </div>
+      </div>
+      <button class="btn-signin" onclick="signIn()"><span>ACCESS PLATFORM →</span></button>
+      <div class="land-err" id="si-err"></div>
+      <div class="land-divider"><div class="land-divider-line"></div><div class="land-divider-txt">OR</div><div class="land-divider-line"></div></div>
+      <button class="btn-signin" style="border-color:var(--dim);color:var(--dim);font-size:13px;letter-spacing:2px;padding:10px" onclick="signInDemo()">
+        <span>CONTINUE AS DEMO USER</span>
+      </button>
+    </div>
+    <div class="land-footer">AEGIS v3 · ENTERPRISE EDITION · CONFIDENTIAL</div>
+  </div>
+</div>
+
+<!-- ══ PAGE 1 — COMPANY ══ -->
+<div class="page" id="p1">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <div class="step-indicators">
+      <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <span class="step-label">STEP 1 OF 3</span>
+    </div>
+    <div style="margin-left:20px;display:flex;align-items:center;gap:0">
+      <span class="tb-user-lbl"></span>
+      <button class="tb-admin-btn" onclick="goPage('padmin')">⚙ ADMIN</button>
+      <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="card">
+      <div class="welcome-badge"><div class="wb-dot"></div><span class="wb-text">SECURE ONBOARDING</span></div>
+      <div class="section-tag">Step 01 — Organisation</div>
+      <div class="card-title">WHO ARE<br>YOU?</div>
+      <div class="card-sub">Tell us about your company so we can tailor the assessment scope and reporting to your environment.</div>
+      <div class="prog-track">
+        <div class="prog-step active"><div class="prog-dot"></div><div class="prog-lbl">COMPANY</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">CONTACT</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">SCOPE</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">SCAN</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">RESULTS</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field" id="ff-co"><label class="field-label">Company Name *</label><input type="text" id="i-co" placeholder="Acme Corp"/><span class="err-msg">Required</span></div>
+        <div class="field" id="ff-ind"><label class="field-label">Industry *</label>
+          <select id="i-ind"><option value="">Select industry…</option><option>Financial Services</option><option>Healthcare</option><option>E-Commerce / Retail</option><option>Government / Public Sector</option><option>Technology / SaaS</option><option>Education</option><option>Manufacturing</option><option>Media & Entertainment</option><option>Energy & Utilities</option><option>Other</option></select>
+          <span class="err-msg">Required</span></div>
+      </div>
+      <div class="field-row">
+        <div class="field" id="ff-sz"><label class="field-label">Company Size *</label>
+          <select id="i-sz"><option value="">Select size…</option><option>1–10</option><option>11–50</option><option>51–200</option><option>201–1000</option><option>1000+</option></select>
+          <span class="err-msg">Required</span></div>
+        <div class="field" id="ff-cty"><label class="field-label">Country / Region *</label><input type="text" id="i-cty" placeholder="e.g. India, United States"/><span class="err-msg">Required</span></div>
+      </div>
+      <div class="field"><label class="field-label">Primary Website</label><input type="text" id="i-web" placeholder="https://yourcompany.com"/></div>
+      <div class="btn-row"><button class="btn-primary" onclick="goP2()"><span>CONTINUE →</span></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 2 — CONTACT ══ -->
+<div class="page" id="p2">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <div class="step-indicators">
+      <div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <span class="step-label">STEP 2 OF 3</span>
+    </div>
+    <div style="margin-left:20px;display:flex;align-items:center;gap:0">
+      <span class="tb-user-lbl"></span>
+      <button class="tb-admin-btn" onclick="goPage('padmin')">⚙ ADMIN</button>
+      <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="card">
+      <div class="section-tag">Step 02 — Point of Contact</div>
+      <div class="card-title">YOUR<br>DETAILS</div>
+      <div class="card-sub">The person authorising this assessment. Reports will be addressed to you.</div>
+      <div class="prog-track">
+        <div class="prog-step done"><div class="prog-dot"></div><div class="prog-lbl">COMPANY</div></div>
+        <div class="prog-step active"><div class="prog-dot"></div><div class="prog-lbl">CONTACT</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">SCOPE</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">SCAN</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">RESULTS</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field" id="ff-fn"><label class="field-label">First Name *</label><input type="text" id="i-fn" placeholder="Alex"/><span class="err-msg">Required</span></div>
+        <div class="field" id="ff-ln"><label class="field-label">Last Name *</label><input type="text" id="i-ln" placeholder="Johnson"/><span class="err-msg">Required</span></div>
+      </div>
+      <div class="field" id="ff-role"><label class="field-label">Job Title / Role *</label>
+        <select id="i-role"><option value="">Select your role…</option><option>Chief Information Security Officer (CISO)</option><option>Security Engineer / Analyst</option><option>CTO / VP Engineering</option><option>IT Manager</option><option>DevOps / Platform Engineer</option><option>Compliance Officer</option><option>Developer / Software Engineer</option><option>Other</option></select>
+        <span class="err-msg">Required</span></div>
+      <div class="field-row">
+        <div class="field" id="ff-em"><label class="field-label">Work Email *</label><input type="email" id="i-em" placeholder="alex@company.com"/><span class="err-msg">Valid email required</span></div>
+        <div class="field"><label class="field-label">Phone (optional)</label><input type="text" id="i-ph" placeholder="+91 98765 43210"/></div>
+      </div>
+      <div class="check-row">
+        <div class="chk-box" id="chk-auth" onclick="toggleChk('chk-auth')"></div>
+        <span class="chk-text" onclick="toggleChk('chk-auth')">I am authorised to conduct security testing on behalf of my organisation</span>
+      </div>
+      <div class="check-row">
+        <div class="chk-box" id="chk-terms" onclick="toggleChk('chk-terms')"></div>
+        <span class="chk-text" onclick="toggleChk('chk-terms')">I agree to the <a href="#">Terms of Service</a> and <a href="#">Responsible Disclosure Policy</a></span>
+      </div>
+      <div class="err-msg" id="chk-err" style="display:none;margin-top:4px">Please accept both checkboxes to continue</div>
+      <div class="btn-row"><button class="btn-back" onclick="goPage('p1')">← BACK</button><button class="btn-primary" onclick="goP3()"><span>CONTINUE →</span></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 3 — SCOPE ══ -->
+<div class="page" id="p3">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <div class="step-indicators">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <span class="step-label">STEP 3 OF 3</span>
+    </div>
+    <div style="margin-left:20px;display:flex;align-items:center;gap:0">
+      <span class="tb-user-lbl"></span>
+      <button class="tb-admin-btn" onclick="goPage('padmin')">⚙ ADMIN</button>
+      <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="card">
+      <div class="section-tag">Step 03 — Assessment Scope</div>
+      <div class="card-title">WHAT TO<br>SCAN?</div>
+      <div class="card-sub">Define the target type and environment. This shapes which checks are prioritised.</div>
+      <div class="prog-track">
+        <div class="prog-step done"><div class="prog-dot"></div><div class="prog-lbl">COMPANY</div></div>
+        <div class="prog-step done"><div class="prog-dot"></div><div class="prog-lbl">CONTACT</div></div>
+        <div class="prog-step active"><div class="prog-dot"></div><div class="prog-lbl">SCOPE</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">SCAN</div></div>
+        <div class="prog-step"><div class="prog-dot"></div><div class="prog-lbl">RESULTS</div></div>
+      </div>
+      <div class="field" id="ff-atype">
+        <label class="field-label">Application Type *</label>
+        <div class="radio-group">
+          <label class="radio-opt" onclick="selRadio(this,'atype')"><input type="radio" name="atype" value="web"/><div class="radio-dot"></div><span class="radio-label">Web Application</span><span class="radio-desc">Websites, SPAs, portals</span></label>
+          <label class="radio-opt" onclick="selRadio(this,'atype')"><input type="radio" name="atype" value="api"/><div class="radio-dot"></div><span class="radio-label">REST / GraphQL API</span><span class="radio-desc">Backend endpoints</span></label>
+          <label class="radio-opt" onclick="selRadio(this,'atype')"><input type="radio" name="atype" value="mobile"/><div class="radio-dot"></div><span class="radio-label">Mobile App Backend</span><span class="radio-desc">iOS / Android API surface</span></label>
+        </div>
+        <span class="err-msg" id="atype-err" style="display:none">Please select an application type</span>
+      </div>
+      <div class="field" id="ff-env" style="margin-top:16px">
+        <label class="field-label">Environment *</label>
+        <div class="radio-group">
+          <label class="radio-opt" onclick="selRadio(this,'env')"><input type="radio" name="env" value="staging"/><div class="radio-dot"></div><span class="radio-label">Staging / QA</span><span class="radio-desc">Non-production</span></label>
+          <label class="radio-opt" onclick="selRadio(this,'env')"><input type="radio" name="env" value="prod"/><div class="radio-dot"></div><span class="radio-label">Production</span><span class="radio-desc">Live — care will be taken</span></label>
+        </div>
+        <span class="err-msg" id="env-err" style="display:none">Please select an environment</span>
+      </div>
+      <div class="field" style="margin-top:16px"><label class="field-label">Additional Context (optional)</label><textarea id="i-ctx" placeholder="e.g. Known tech stack, specific endpoints to focus on, out-of-scope paths…"></textarea></div>
+      <div class="btn-row"><button class="btn-back" onclick="goPage('p2')">← BACK</button><button class="btn-primary" onclick="goP4()"><span>LAUNCH SCANNER →</span></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 4 — SCANNER ══ -->
+<div class="page" id="p4">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <div class="step-indicators">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div>
+      <span class="step-label">SCANNER</span>
+    </div>
+    <div style="margin-left:20px;display:flex;align-items:center;gap:0">
+      <span class="tb-user-lbl"></span>
+      <button class="tb-admin-btn" onclick="goPage('padmin')">⚙ ADMIN</button>
+      <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="scanner-wrap">
+      <div class="scan-hdr">
+        <div class="sh-logo">AEGIS SCAN</div>
+        <div class="sh-co" id="sh-co">—</div>
+        <div class="sh-tag">OWASP TOP 10 · 2021</div>
+      </div>
+      <div class="scan-panel">
+        <div class="sp-title">Target Configuration</div>
+        <div class="url-row"><input class="url-input" id="urlInput" type="text" placeholder="https://target.example.com  or  http://127.0.0.1:3000" spellcheck="false" autocomplete="off"/></div>
+        <div class="mode-row">
+          <div class="mcard sel" id="modeStd" onclick="selMode('standard')"><div class="mtitle">▶ STANDARD</div><div class="mdesc">Fast focused assessment. Highest-impact OWASP classes.</div><div class="mbadges"><span class="mb">Nikto</span><span class="mb">Nuclei</span><span class="mb">SQLi</span><span class="mb">XSS</span><span class="mb">Headers</span><span class="mb">CORS</span><span class="mb">~5–10 min</span></div></div>
+          <div class="mcard deep" id="modeDeep" onclick="selMode('deep')"><div class="mtitle">⬛ DEEP SCAN</div><div class="mdesc">Full OWASP Top 10 + 24 advanced checks.</div><div class="mbadges"><span class="mb">All Standard</span><span class="mb">SSRF</span><span class="mb">XXE</span><span class="mb">SSTI</span><span class="mb">JWT</span><span class="mb">CSRF</span><span class="mb">~15–30 min</span></div></div>
+        </div>
+        <div class="auth-row">
+          <div class="afield"><span class="alabel">Bearer Token</span><input class="ainput" id="authToken" type="text" placeholder="eyJhbGciOi…"/></div>
+          <div class="afield"><span class="alabel">Cookie</span><input class="ainput" id="authCookie" type="text" placeholder="session=abc; csrf=xyz"/></div>
+          <div class="afield"><span class="alabel">Username</span><input class="ainput" id="authUser" type="text" placeholder="admin"/></div>
+          <div class="afield"><span class="alabel">Password</span><input class="ainput" id="authPass" type="password" placeholder="••••••••"/></div>
+        </div>
+
+        <!-- VirusTotal Section -->
+        <div class="vt-section">
+          <div class="vt-hdr">
+            <span class="vt-title">Malware Detection</span>
+            <span class="vt-badge">VIRUSTOTAL API v3</span>
+          </div>
+          <div class="vt-toggle" id="vtToggle" onclick="toggleVT()">
+            <div class="vt-sw" id="vtSw"></div>
+            <span class="vt-sw-lbl" id="vtSwLbl">Enable VirusTotal malware & reputation scan</span>
+            <span class="vt-desc">URL analysis against 90+ security engines</span>
+          </div>
+          <div class="vt-fields" id="vtFields">
+            <div class="vt-api-row" style="display:none">
+              <div style="flex:1">
+                <div class="alabel" style="margin-bottom:5px">VirusTotal API Key</div>
+                <input class="vt-input" id="vtApiKey" type="password" placeholder="API key configured" autocomplete="off" style="display:none"/>
+              </div>
+            </div>
+            <div>
+              <div class="alabel" style="margin-bottom:6px">Check Types</div>
+              <div class="vt-check-opts">
+                <button class="vtc on" id="vtcUrl" onclick="toggleVTC('vtcUrl')">URL</button>
+                <button class="vtc on" id="vtcDomain" onclick="toggleVTC('vtcDomain')">DOMAIN</button>
+                <button class="vtc on" id="vtcIp" onclick="toggleVTC('vtcIp')">IP ADDRESS</button>
+                <button class="vtc" id="vtcFiles" onclick="toggleVTC('vtcFiles')">LINKED FILES</button>
+              </div>
+            </div>
+            <div class="vt-note">⚠ The target URL and extracted domain/IPs will be submitted to VirusTotal. Only enable for targets you have written permission to test. Free API tier: 4 requests/min.</div>
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="btn-launch" id="launchBtn" onclick="launch()"><span id="launchLbl">▶ LAUNCH SCAN</span></button>
+          <div class="dots" id="dots"><span></span><span></span><span></span></div>
+          <div class="sline" id="status">Configure a target URL and press Launch</div>
+        </div>
+
+        <!-- Live Progress Bar -->
+        <div class="progbar-wrap" id="progbarWrap">
+          <div class="pb-header">
+            <span class="pb-label" id="pbLabel">INITIALISING…</span>
+            <span class="pb-pct" id="pbPct">0%</span>
+          </div>
+          <div class="pb-track"><div class="pb-fill" id="pbFill" style="width:0%"></div></div>
+          <div class="pb-steps" id="pbSteps">
+            <div class="pb-step" id="pbs0"><div class="pb-sdot"></div><div class="pb-slbl">INIT</div></div>
+            <div class="pb-step" id="pbs1"><div class="pb-sdot"></div><div class="pb-slbl">RECON</div></div>
+            <div class="pb-step" id="pbs2"><div class="pb-sdot"></div><div class="pb-slbl">HEADERS</div></div>
+            <div class="pb-step" id="pbs3"><div class="pb-sdot"></div><div class="pb-slbl">NIKTO</div></div>
+            <div class="pb-step" id="pbs4"><div class="pb-sdot"></div><div class="pb-slbl">NUCLEI</div></div>
+            <div class="pb-step" id="pbs5"><div class="pb-sdot"></div><div class="pb-slbl">SQLI/XSS</div></div>
+            <div class="pb-step" id="pbs6"><div class="pb-sdot"></div><div class="pb-slbl">AUTH</div></div>
+            <div class="pb-step" id="pbs7"><div class="pb-sdot"></div><div class="pb-slbl">REPORT</div></div>
+          </div>
+          <div class="pb-eta" id="pbEta"></div>
+        </div>
+        <div class="logbox" id="logbox">
+          <div class="loghdr">
+            <span class="logtitle">Live Log</span><span class="livebadge" id="livebadge">LIVE</span>
+            <span class="lpageinfo" id="lpageinfo"></span>
+            <div class="lnav"><button class="lnbtn" id="lbPrev" onclick="logPage(-1)" disabled>‹</button><button class="lnbtn" id="lbNext" onclick="logPage(+1)" disabled>›</button></div>
+          </div>
+          <div class="logsearch-row">
+            <input class="lsearch" id="lsearch" type="text" placeholder="Filter lines…" oninput="logFilter()"/>
+            <span class="lmatch" id="lmatch"></span>
+            <div class="lfbtns">
+              <button class="lfbtn on" id="fAll" onclick="setLF('all')">ALL</button>
+              <button class="lfbtn" id="fOk" onclick="setLF('ok')">OK</button>
+              <button class="lfbtn" id="fWarn" onclick="setLF('warn')">WARN</button>
+              <button class="lfbtn" id="fErr" onclick="setLF('err')">ERR</button>
+            </div>
+          </div>
+          <div class="logbody" id="logbody"></div>
+          <div class="logftr"><span class="ltotal" id="ltotal"></span><div class="ljump"><span class="ljlabel">Pg</span><input class="ljinput" id="ljinput" type="number" min="1" onkeydown="if(event.key==='Enter')logJump()"/><button class="lnbtn" onclick="logJump()">Go</button></div></div>
+        </div>
+        <div class="errbox" id="errbox"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 5 — RESULTS ══ -->
+<div class="page" id="p5">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <div class="step-indicators">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div>
+      <span class="step-label">RESULTS</span>
+    </div>
+    <div style="margin-left:20px;display:flex;align-items:center;gap:0">
+      <span class="tb-user-lbl"></span>
+      <button class="tb-admin-btn" onclick="goPage('padmin')">⚙ ADMIN</button>
+      <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="report-wrap">
+      <div class="rpt-hdr">
+        <div class="rh-top">
+          <div class="rh-logo">ASSESSMENT REPORT</div>
+          <div class="rh-tgt" id="rh-tgt">—</div>
+          <div class="rh-acts">
+            <button class="btn-sm" onclick="goPage('p4')">← BACK TO SCAN</button>
+            <button class="btn-sm accent" onclick="goPage('p6')">SOLUTIONS →</button>
+          </div>
+        </div>
+        <div class="score-row">
+          <div class="risk-card"><div class="risk-grade" id="risk-grade">—</div><div class="risk-lbl">RISK GRADE</div></div>
+          <div class="stat-card sc-c"><div class="stat-num" id="cnt-c">0</div><div class="stat-lbl">Critical</div></div>
+          <div class="stat-card sc-h"><div class="stat-num" id="cnt-h">0</div><div class="stat-lbl">High</div></div>
+          <div class="stat-card sc-m"><div class="stat-num" id="cnt-m">0</div><div class="stat-lbl">Medium</div></div>
+          <div class="stat-card sc-l"><div class="stat-num" id="cnt-l">0</div><div class="stat-lbl">Low</div></div>
+          <div class="stat-card sc-i"><div class="stat-num" id="cnt-i">0</div><div class="stat-lbl">Info</div></div>
+        </div>
+        <div class="rpt-nav" id="rpt-nav"></div>
+      </div>
+      <div class="rtab-pages" id="rtab-pages"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 6 — SOLUTIONS ══ -->
+<div class="page" id="p6">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <div class="step-indicators">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div>
+      <span class="step-label">SOLUTIONS</span>
+    </div>
+    <div style="margin-left:20px;display:flex;align-items:center;gap:0">
+      <span class="tb-user-lbl"></span>
+      <button class="tb-admin-btn" onclick="goPage('padmin')">⚙ ADMIN</button>
+      <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="report-wrap">
+      <div class="rpt-hdr">
+        <div class="rh-top">
+          <div class="rh-logo">REMEDIATION GUIDE</div>
+          <div class="rh-tgt" id="sol-tgt">—</div>
+          <div class="rh-acts">
+            <button class="btn-sm" onclick="goPage('p5')">← RESULTS</button>
+            <button class="btn-sm accent" onclick="goPage('p4')">NEW SCAN</button>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:14px">
+          <div style="font-size:22px;flex-shrink:0;margin-top:2px">🛠</div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">HOW TO USE THIS GUIDE</div>
+            <div style="font-family:var(--sans);font-size:13px;color:var(--body);line-height:1.65">Each finding below includes a step-by-step fix with code examples. Start with <span style="color:var(--red)">Critical</span> and <span style="color:var(--orange)">High</span> severity — these pose the greatest immediate risk. Click any finding to expand its remediation steps, then work through them in order. After fixing, re-run AEGIS to confirm the issue is resolved.</div>
+          </div>
+        </div>
+        <div class="rpt-nav" id="sol-nav"></div>
+      </div>
+      <div class="rtab-pages" id="sol-pages"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE ADMIN — USER MANAGEMENT ══ -->
+<div class="page" id="padmin">
+  <div class="topbar">
+    <div><div class="logo-mark">AEGIS</div><div class="logo-sub">Security Assessment Platform</div></div>
+    <div class="tb-spacer"></div>
+    <span class="tb-user-lbl"></span>
+    <button class="tb-admin-btn" onclick="goPage('padmin')" style="border-color:var(--cyan);color:var(--cyan)">⚙ ADMIN</button>
+    <button class="tb-logout-btn" onclick="logout()">SIGN OUT</button>
+  </div>
+  <div class="page-body">
+    <div class="admin-wrap">
+      <div class="admin-hdr">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+          <button class="btn-back" onclick="goPage('p4')" style="font-size:9px">← BACK TO SCANNER</button>
+        </div>
+        <div class="admin-title">USER<br>MANAGEMENT</div>
+        <div class="admin-sub">AEGIS · ADMIN CONSOLE · AUTHORISED ACCESS ONLY</div>
+      </div>
+
+      <!-- Add user -->
+      <div class="admin-section">
+        <div class="admin-section-hdr">
+          <span class="admin-section-title">ADD NEW USER</span>
+        </div>
+        <div class="admin-section-body">
+          <div class="au-grid">
+            <div class="au-field">
+              <span class="au-label">Email Address</span>
+              <input class="au-input" id="au-email" type="email" placeholder="user@company.com" autocomplete="off"/>
+            </div>
+            <div class="au-field">
+              <span class="au-label">Password (min 6 chars)</span>
+              <input class="au-input" id="au-pass" type="password" placeholder="••••••••" autocomplete="new-password"/>
+            </div>
+            <div class="au-field">
+              <span class="au-label">Role</span>
+              <select class="au-select" id="au-role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button class="btn-add" onclick="adminAddUser()"><span>+ ADD</span></button>
+          </div>
+          <div class="au-msg" id="au-msg"></div>
+        </div>
+      </div>
+
+      <!-- User list -->
+      <div class="admin-section">
+        <div class="admin-section-hdr">
+          <span class="admin-section-title">REGISTERED USERS</span>
+          <button class="btn-sm" onclick="adminLoadUsers()" style="font-size:8px">↻ REFRESH</button>
+        </div>
+        <div class="admin-section-body" style="padding:0">
+          <table class="utbl" id="utbl">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="utbl-body">
+              <tr><td colspan="3" class="utbl-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Info card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px">
+        <div style="font-size:20px;flex-shrink:0;margin-top:1px">🔒</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">SECURITY NOTE</div>
+          <div style="font-family:var(--sans);font-size:12px;color:var(--body);line-height:1.6">Passwords are stored as SHA-256 hashes in <code style="font-family:var(--mono);color:var(--dim)">users.json</code>. For production deployments, replace with bcrypt and a proper secrets manager. The last admin account cannot be deleted or demoted.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIGURATION — paste your VirusTotal API key below
+// ════════════════════════════════════════════
+const VT_API_KEY = 'PASTE_YOUR_VIRUSTOTAL_API_KEY_HERE';
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let _mode='standard', _preset='', _poll=null, _company='', _scanData=null;
+let _vtEnabled=false, _vtChecks={vtcUrl:true,vtcDomain:true,vtcIp:true,vtcFiles:false};
+const LPS=60, RPS=20;
+const SEV_ORD={critical:0,high:1,medium:2,low:3,info:4,unknown:5};
+let _logAll=[],_logFilt=[],_logPg=1,_logF='all',_logS='',_logLive=false;
+let _pbTimer=null,_pbStart=0,_pbStep=0;
+
+// ════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el=document.getElementById(id);
+  el.classList.add('active');
+  el.style.animation='none';
+  requestAnimationFrame(()=>{el.style.animation='';});
+  window.scrollTo(0,0);
+  // Admin page hook — reload user list whenever the admin panel is shown
+  if(id==='padmin') adminLoadUsers();
+}
+
+// ════════════════════════════════════════════
+// AUTH STATE
+// ════════════════════════════════════════════
+let _currentUser = null;   // {email, role}
+let _adminToken  = null;   // fetched from /admin/token after admin login
+
+async function signIn(){
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-pass').value;
+  const err   = document.getElementById('si-err');
+  document.getElementById('si-email').classList.remove('err');
+  document.getElementById('si-pass').classList.remove('err');
+  err.textContent = '';
+
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    document.getElementById('si-email').classList.add('err');
+    err.textContent = 'Please enter a valid email address.'; return;
+  }
+  if(!pass || pass.length < 1){
+    document.getElementById('si-pass').classList.add('err');
+    err.textContent = 'Please enter your password.'; return;
+  }
+
+  const btn = document.querySelector('.btn-signin');
+  btn.disabled = true;
+  err.textContent = 'Authenticating…';
+
+  try {
+    const res  = await fetch('/admin/verify', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: pass})
+    });
+    const data = await res.json();
+    if(!res.ok || !data.ok){
+      err.textContent = data.error || 'Invalid credentials.';
+      document.getElementById('si-email').classList.add('err');
+      document.getElementById('si-pass').classList.add('err');
+      btn.disabled = false; return;
+    }
+    _currentUser = {email: data.email, role: data.role};
+    // If admin, fetch the admin token for managing users
+    if(data.role === 'admin'){
+      const tr = await fetch('/admin/token');
+      const td = await tr.json();
+      _adminToken = td.token;
+    }
+    _afterLogin();
+  } catch(e){
+    err.textContent = 'Network error — is the server running?';
+    btn.disabled = false;
+  }
+}
+
+function signInDemo(){ goPage('p1'); }
+
+function _afterLogin(){
+  // Show/hide admin button in all topbars
+  document.querySelectorAll('.tb-admin-btn').forEach(b=>{
+    b.style.display = (_currentUser && _currentUser.role==='admin') ? '' : 'none';
+  });
+  document.querySelectorAll('.tb-user-lbl').forEach(el=>{
+    el.textContent = _currentUser ? _currentUser.email : '';
+  });
+  goPage('p1');
+}
+
+function logout(){
+  _currentUser = null; _adminToken = null;
+  document.getElementById('si-email').value='';
+  document.getElementById('si-pass').value='';
+  document.getElementById('si-err').textContent='';
+  goPage('p0');
+}
+
+// ════════════════════════════════════════════
+// ADMIN — USER MANAGEMENT
+// ════════════════════════════════════════════
+async function adminLoadUsers(){
+  if(!_adminToken) return;
+  const tbody = document.getElementById('utbl-body');
+  tbody.innerHTML = '<tr><td colspan="3" class="utbl-empty">Loading…</td></tr>';
+  try{
+    const res  = await fetch('/admin/users', {headers:{'X-Admin-Token': _adminToken}});
+    const data = await res.json();
+    if(!res.ok){ tbody.innerHTML=`<tr><td colspan="3" class="utbl-empty" style="color:var(--red)">${data.error||'Error loading users'}</td></tr>`; return; }
+    const users = data.users;
+    if(!users.length){ tbody.innerHTML='<tr><td colspan="3" class="utbl-empty">No users found.</td></tr>'; return; }
+    tbody.innerHTML = users.map(u=>`
+      <tr>
+        <td>${eh(u.email)}</td>
+        <td><span class="role-badge ${u.role}">${u.role.toUpperCase()}</span></td>
+        <td style="text-align:right">
+          <button class="btn-role" onclick="adminToggleRole('${eh(u.email)}','${u.role==='admin'?'user':'admin'}')"
+            title="Toggle role">${u.role==='admin'?'→ USER':'→ ADMIN'}</button>
+          <button class="btn-del" onclick="adminDeleteUser('${eh(u.email)}')" title="Remove user">✕ REMOVE</button>
+        </td>
+      </tr>`).join('');
+  }catch(e){ tbody.innerHTML=`<tr><td colspan="3" class="utbl-empty" style="color:var(--red)">Network error</td></tr>`; }
+}
+
+function _setAuMsg(txt, type){
+  const el = document.getElementById('au-msg');
+  el.textContent = txt;
+  el.className = 'au-msg ' + (type||'');
+}
+
+async function adminAddUser(){
+  const email = document.getElementById('au-email').value.trim();
+  const pass  = document.getElementById('au-pass').value;
+  const role  = document.getElementById('au-role').value;
+  document.getElementById('au-email').classList.remove('err');
+  document.getElementById('au-pass').classList.remove('err');
+  _setAuMsg('','');
+  let ok = true;
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ document.getElementById('au-email').classList.add('err'); ok=false; }
+  if(!pass || pass.length < 6){ document.getElementById('au-pass').classList.add('err'); _setAuMsg('Password must be at least 6 characters.','err'); ok=false; }
+  if(!ok) return;
+  _setAuMsg('Adding user…','');
+  try{
+    const res  = await fetch('/admin/users',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':_adminToken},
+      body: JSON.stringify({email, password:pass, role})
+    });
+    const data = await res.json();
+    if(!res.ok){ _setAuMsg(data.error||'Failed to add user.','err'); return; }
+    _setAuMsg(`✓ User ${email} added successfully.`,'ok');
+    document.getElementById('au-email').value='';
+    document.getElementById('au-pass').value='';
+    document.getElementById('au-role').value='user';
+    adminLoadUsers();
+  }catch(e){ _setAuMsg('Network error.','err'); }
+}
+
+async function adminDeleteUser(email){
+  if(!confirm(`Remove user "${email}"? This cannot be undone.`)) return;
+  try{
+    const res  = await fetch('/admin/users/'+encodeURIComponent(email),{
+      method:'DELETE', headers:{'X-Admin-Token':_adminToken}
+    });
+    const data = await res.json();
+    if(!res.ok){ alert(data.error||'Failed to remove user.'); return; }
+    adminLoadUsers();
+  }catch(e){ alert('Network error.'); }
+}
+
+async function adminToggleRole(email, newRole){
+  if(!confirm(`Change role of "${email}" to ${newRole}?`)) return;
+  try{
+    const res  = await fetch('/admin/users/'+encodeURIComponent(email),{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','X-Admin-Token':_adminToken},
+      body: JSON.stringify({role: newRole})
+    });
+    const data = await res.json();
+    if(!res.ok){ alert(data.error||'Failed to update role.'); return; }
+    adminLoadUsers();
+  }catch(e){ alert('Network error.'); }
+}
+
+
+
+function req(fid,iid){const v=document.getElementById(iid).value.trim();document.getElementById(fid).classList.toggle('err',!v);return!!v;}
+function reqSel(fid,iid){const v=document.getElementById(iid).value;document.getElementById(fid).classList.toggle('err',!v);return!!v;}
+function reqEmail(fid,iid){const v=document.getElementById(iid).value.trim();const ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);document.getElementById(fid).classList.toggle('err',!ok);return ok;}
+
+document.addEventListener('input',e=>{const f=e.target.closest('.field');if(f)f.classList.remove('err');});
+
+function goP2(){
+  let ok=true;
+  ok=req('ff-co','i-co')&&ok; ok=reqSel('ff-ind','i-ind')&&ok;
+  ok=reqSel('ff-sz','i-sz')&&ok; ok=req('ff-cty','i-cty')&&ok;
+  if(!ok)return;
+  _company=document.getElementById('i-co').value.trim();
+  goPage('p2');
+}
+function goP3(){
+  let ok=true;
+  ok=req('ff-fn','i-fn')&&ok; ok=req('ff-ln','i-ln')&&ok;
+  ok=reqSel('ff-role','i-role')&&ok; ok=reqEmail('ff-em','i-em')&&ok;
+  const a=document.getElementById('chk-auth').classList.contains('checked');
+  const t=document.getElementById('chk-terms').classList.contains('checked');
+  if(!a||!t){document.getElementById('chk-err').style.display='block';ok=false;}
+  else document.getElementById('chk-err').style.display='none';
+  if(!ok)return; goPage('p3');
+}
+function goP4(){
+  let ok=true;
+  if(!document.querySelector('input[name="atype"]:checked')){document.getElementById('atype-err').style.display='block';ok=false;}
+  else document.getElementById('atype-err').style.display='none';
+  if(!document.querySelector('input[name="env"]:checked')){document.getElementById('env-err').style.display='block';ok=false;}
+  else document.getElementById('env-err').style.display='none';
+  if(!ok)return;
+  document.getElementById('sh-co').textContent=_company||'Your Organisation';
+  const ws=document.getElementById('i-web').value.trim();
+  if(ws&&!document.getElementById('urlInput').value.trim())document.getElementById('urlInput').value=ws;
+  goPage('p4');
+}
+
+function selRadio(el,name){
+  document.querySelectorAll(`input[name="${name}"]`).forEach(r=>r.closest('.radio-opt').classList.remove('sel'));
+  el.classList.add('sel'); el.querySelector('input').checked=true;
+}
+function toggleChk(id){document.getElementById(id).classList.toggle('checked');}
+
+// ════════════════════════════════════════════
+// VIRUSTOTAL UI
+// ════════════════════════════════════════════
+function toggleVT(){
+  _vtEnabled=!_vtEnabled;
+  document.getElementById('vtToggle').classList.toggle('on',_vtEnabled);
+  document.getElementById('vtFields').classList.toggle('show',_vtEnabled);
+}
+function toggleVTC(id){
+  _vtChecks[id]=!_vtChecks[id];
+  document.getElementById(id).classList.toggle('on',_vtChecks[id]);
+}
+
+// ════════════════════════════════════════════
+// PROGRESS BAR
+// ════════════════════════════════════════════
+const PB_PHASES_STD=[
+  {lbl:'INITIALISING',pct:5,step:0},{lbl:'RECON / DNS',pct:12,step:1},
+  {lbl:'HEADER ANALYSIS',pct:22,step:2},{lbl:'NIKTO SCAN',pct:38,step:3},
+  {lbl:'NUCLEI TEMPLATES',pct:56,step:4},{lbl:'SQLi / XSS PROBES',pct:72,step:5},
+  {lbl:'AUTH CHECKS',pct:85,step:6},{lbl:'GENERATING REPORT',pct:96,step:7}
+];
+const PB_PHASES_DEEP=[
+  {lbl:'INITIALISING',pct:3,step:0},{lbl:'RECON / DNS',pct:8,step:1},
+  {lbl:'HEADER ANALYSIS',pct:14,step:2},{lbl:'NIKTO SCAN',pct:26,step:3},
+  {lbl:'NUCLEI TEMPLATES',pct:42,step:4},{lbl:'SQLi / XSS / SSRF',pct:58,step:5},
+  {lbl:'JWT / CSRF / XXE',pct:78,step:6},{lbl:'GENERATING REPORT',pct:93,step:7}
+];
+function startProgressBar(){
+  const wrap=document.getElementById('progbarWrap');
+  const fill=document.getElementById('pbFill');
+  wrap.classList.add('show');
+  fill.classList.toggle('dp',_mode==='deep');
+  _pbStep=0;_pbStart=Date.now();
+  setProgressStep(0);
+  const phases=_mode==='deep'?PB_PHASES_DEEP:PB_PHASES_STD;
+  // step through phases over estimated scan time
+  const totalMs=(_mode==='deep'?1500:600)*1000; // pessimistic ceiling for UI
+  let phIdx=0;
+  _pbTimer=setInterval(()=>{
+    // advance based on log hints too
+    const lastLog=_logAll[_logAll.length-1]||'';
+    if(/nikto/i.test(lastLog)&&phIdx<3)phIdx=3;
+    else if(/nuclei/i.test(lastLog)&&phIdx<4)phIdx=4;
+    else if(/sqli|xss|injection/i.test(lastLog)&&phIdx<5)phIdx=5;
+    else if(/jwt|csrf|ssrf|xxe/i.test(lastLog)&&phIdx<6)phIdx=6;
+    else if(/report|saving|saved/i.test(lastLog)&&phIdx<7)phIdx=7;
+    else if(phIdx<phases.length-1&&Math.random()<0.07)phIdx++;
+    setProgressStep(phIdx);
+  },2000);
+}
+function setProgressStep(idx){
+  const phases=_mode==='deep'?PB_PHASES_DEEP:PB_PHASES_STD;
+  const ph=phases[Math.min(idx,phases.length-1)];
+  document.getElementById('pbLabel').textContent=ph.lbl+'…';
+  document.getElementById('pbPct').textContent=ph.pct+'%';
+  document.getElementById('pbFill').style.width=ph.pct+'%';
+  // update step dots
+  for(let i=0;i<8;i++){
+    const el=document.getElementById('pbs'+i);if(!el)continue;
+    el.className='pb-step'+(i<ph.step?' done':i===ph.step?' active':'');
+  }
+  // ETA
+  const elapsed=Math.floor((Date.now()-_pbStart)/1000);
+  const m=Math.floor(elapsed/60),s=elapsed%60;
+  document.getElementById('pbEta').textContent=`Elapsed: ${m}m ${s}s`;
+}
+function stopProgressBar(success){
+  clearInterval(_pbTimer);_pbTimer=null;
+  const fill=document.getElementById('pbFill');
+  fill.style.width='100%';
+  document.getElementById('pbPct').textContent='100%';
+  document.getElementById('pbLabel').textContent=success?'SCAN COMPLETE ✓':'SCAN ENDED';
+  for(let i=0;i<8;i++){const el=document.getElementById('pbs'+i);if(el)el.className='pb-step done';}
+  setTimeout(()=>{document.getElementById('progbarWrap').classList.remove('show');},2500);
+}
+
+// ════════════════════════════════════════════
+// SCANNER
+// ════════════════════════════════════════════
+function selMode(m){
+  _mode=m;
+  document.getElementById('modeStd').classList.toggle('sel',m==='standard');
+  document.getElementById('modeDeep').classList.toggle('sel',m==='deep');
+  const btn=document.getElementById('launchBtn'),lbl=document.getElementById('launchLbl');
+  btn.classList.toggle('dp',m==='deep');
+  lbl.textContent=m==='deep'?'⬛ LAUNCH DEEP SCAN':'▶ LAUNCH SCAN';
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('urlInput').addEventListener('input',()=>{_preset='';});
+});
+function setScanningUI(on){
+  document.getElementById('launchBtn').disabled=on;
+  document.getElementById('dots').classList.toggle('show',on);
+  document.getElementById('dots').classList.toggle('dp',_mode==='deep');
+  if(!on){clearInterval(_poll);_poll=null;}
+}
+function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lineClass(l){
+  if(/^\[\+\]|saved|auth ok/i.test(l))return'ok';
+  if(/^\[!\]|warn|failed/i.test(l))return'warn';
+  if(/^\[err\]|error|exception/i.test(l))return'err';
+  if(/^\[\*\]|^\s+\[/.test(l))return'info';
+  return'dim';
+}
+function rebuildFilt(){
+  const s=_logS.toLowerCase();
+  _logFilt=_logAll.filter(l=>{const c=lineClass(l);const mf=_logF==='all'?true:_logF==='ok'?c==='ok':_logF==='warn'?c==='warn':c==='err';return mf&&(!s||l.toLowerCase().includes(s));});
+  _logPg=1;
+}
+function renderLog(){
+  const total=_logFilt.length,pages=Math.max(1,Math.ceil(total/LPS));
+  _logPg=Math.min(Math.max(1,_logPg),pages);
+  const start=(_logPg-1)*LPS,slice=_logFilt.slice(start,start+LPS);
+  const s=_logS.toLowerCase(),re=s?new RegExp('('+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'):null;
+  document.getElementById('logbody').innerHTML=slice.map(l=>{let t=eh(l);if(re)t=t.replace(re,'<span class="ll-hl">$1</span>');return`<span class="ll-${lineClass(l)}">${t}</span>`;}).join('\n');
+  if(_logLive&&_logPg===pages){const b=document.getElementById('logbody');b.scrollTop=b.scrollHeight;}
+  document.getElementById('lpageinfo').textContent=`${_logPg}/${pages}`;
+  document.getElementById('ltotal').textContent=`${total} shown · ${_logAll.length} total`;
+  document.getElementById('lmatch').textContent=s?`${total} match${total!==1?'es':''}`:'' ;
+  document.getElementById('lbPrev').disabled=_logPg<=1;
+  document.getElementById('lbNext').disabled=_logPg>=pages;
+  document.getElementById('ljinput').max=pages;
+}
+function logPage(d){_logPg+=d;renderLog();}
+function logJump(){const v=parseInt(document.getElementById('ljinput').value,10);if(!isNaN(v)){_logPg=v;renderLog();}}
+function logFilter(){_logS=document.getElementById('lsearch').value;rebuildFilt();renderLog();}
+function setLF(f){
+  _logF=f;
+  ['fAll','fOk','fWarn','fErr'].forEach(id=>{document.getElementById(id).className='lfbtn';});
+  const map={all:'fAll on',ok:'fOk on',warn:'fWarn won',err:'fErr eon'};
+  map[f].split(' ').forEach(c=>document.getElementById({all:'fAll',ok:'fOk',warn:'fWarn',err:'fErr'}[f]).classList.add(c));
+  rebuildFilt();renderLog();
+}
+function startLog(){
+  _logLive=true;_logAll=[];_logFilt=[];_logPg=1;
+  document.getElementById('logbox').classList.add('show');
+  document.getElementById('livebadge').className='livebadge';
+  document.getElementById('livebadge').textContent='LIVE';
+  document.getElementById('logbody').innerHTML='';
+  renderLog();
+  _poll=setInterval(async()=>{
+    try{const d=await(await fetch('/scan-status')).json();
+      if(d.lines&&d.lines.length>_logAll.length){
+        const fresh=d.lines.slice(_logAll.length);_logAll.push(...fresh);rebuildFilt();
+        const pages=Math.max(1,Math.ceil(_logFilt.length/LPS));_logPg=pages;renderLog();
+      }
+    }catch(_){}
+  },1200);
+}
+function stopLog(){
+  _logLive=false;clearInterval(_poll);_poll=null;
+  document.getElementById('livebadge').className='livebadge off';
+  document.getElementById('livebadge').textContent='DONE';
+  renderLog();
+}
+async function launch(){
+  const raw=document.getElementById('urlInput').value.trim();
+  const uel=document.getElementById('urlInput');
+  if(!raw){uel.classList.add('err');return;}
+  if(!/^https?:\/\//i.test(raw)){uel.classList.add('err');showErr('URL must start with http:// or https://');return;}
+  uel.classList.remove('err');
+  document.getElementById('errbox').style.display='none';
+  const st=document.getElementById('status');
+  setScanningUI(true);
+  st.className=`sline run${_mode==='deep'?' dp':''}`;
+  st.textContent=_mode==='deep'?`Deep scanning ${raw}…`:`Scanning ${raw}…`;
+  startLog();
+  startProgressBar();
+  const body={url:raw,mode:_mode,preset:_preset,
+    token:document.getElementById('authToken').value.trim(),
+    cookie:document.getElementById('authCookie').value.trim(),
+    username:document.getElementById('authUser').value.trim(),
+    password:document.getElementById('authPass').value};
+  try{
+    const res=await fetch('/run-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok||data.error)throw new Error(data.error||`HTTP ${res.status}`);
+    st.className='sline done';st.textContent='✓ Scan complete';
+    stopProgressBar(true);
+    // Run VirusTotal if enabled
+    let vtData=null;
+    if(_vtEnabled){
+      const apiKey=VT_API_KEY.trim();
+      if(apiKey&&apiKey!=='PASTE_YOUR_VIRUSTOTAL_API_KEY_HERE'){
+        st.textContent='✓ Scan complete · Running VirusTotal…';
+        try{ vtData=await runVirusTotal(raw,apiKey); }catch(ve){ console.warn('VT error',ve); }
+      } else {
+        console.warn('VirusTotal enabled but API key not configured in VT_API_KEY constant.');
+      }
+    }
+    buildReport(data,raw,_mode,vtData);
+  }catch(e){
+    st.className='sline err';st.textContent='✗ Scan failed';
+    stopProgressBar(false);
+    showErr('Error: '+e.message);
+  }finally{setScanningUI(false);stopLog();}
+}
+function showErr(m){const e=document.getElementById('errbox');e.style.display='block';e.textContent=m;}
+
+// ════════════════════════════════════════════
+// VIRUSTOTAL API v3
+// ════════════════════════════════════════════
+async function runVirusTotal(url,apiKey){
+  const checks=_vtChecks;
+  const results={url:null,domain:null,ip:null};
+  const headers={'x-apikey':apiKey};
+  // 1. URL analysis
+  if(checks.vtcUrl){
+    try{
+      const enc=btoa(url).replace(/=/g,'');
+      const r=await fetch(`https://www.virustotal.com/api/v3/urls/${enc}`,{headers});
+      if(r.ok){const d=await r.json();results.url=d.data?.attributes;}
+      else{
+        // submit then poll
+        const fd=new FormData();fd.append('url',url);
+        const sub=await fetch('https://www.virustotal.com/api/v3/urls',{method:'POST',headers,body:fd});
+        if(sub.ok){
+          const sd=await sub.json();const aid=sd.data?.id;
+          await new Promise(r=>setTimeout(r,15000));
+          const pr=await fetch(`https://www.virustotal.com/api/v3/analyses/${aid}`,{headers});
+          if(pr.ok){const pd=await pr.json();results.url=pd.data?.attributes;}
+        }
+      }
+    }catch(_){}
+  }
+  // 2. Domain analysis
+  if(checks.vtcDomain){
+    try{
+      const host=new URL(url).hostname;
+      const r=await fetch(`https://www.virustotal.com/api/v3/domains/${host}`,{headers});
+      if(r.ok){const d=await r.json();results.domain=d.data?.attributes;}
+    }catch(_){}
+  }
+  // 3. IP analysis
+  if(checks.vtcIp){
+    try{
+      const host=new URL(url).hostname;
+      const r=await fetch(`https://www.virustotal.com/api/v3/domains/${host}/resolutions?limit=1`,{headers});
+      if(r.ok){
+        const d=await r.json();
+        const ip=d.data?.[0]?.attributes?.ip_address;
+        if(ip){
+          const ir=await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`,{headers});
+          if(ir.ok){const id=await ir.json();results.ip={...id.data?.attributes,_ip:ip};}
+        }
+      }
+    }catch(_){}
+  }
+  return results;
+}
+
+function buildVTResultHTML(vtData,url){
+  if(!vtData)return'';
+  let html=`<div class="vt-result-section"><div class="vtr-hdr"><span class="vtr-icon">🛡</span><span class="vtr-title">VIRUSTOTAL ANALYSIS</span><span style="font-family:var(--mono);font-size:9px;color:var(--dim)">API v3 · ${new URL(url).hostname}</span></div><div class="vtr-body">`;
+  // URL stats
+  if(vtData.url){
+    const s=vtData.url.last_analysis_stats||{};
+    const mal=(s.malicious||0)+(s.suspicious||0);
+    const total=Object.values(s).reduce((a,b)=>a+b,0)||1;
+    const badge=mal>0?'threat':s.undetected>0?'warn':'clean';
+    const badgeT=mal>0?`${mal} ENGINE${mal!==1?'S':''} FLAGGED`:'CLEAN';
+    html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-family:var(--mono);font-size:12px;color:var(--body)">URL Scan</span><span class="vtr-badge ${badge}">${badgeT}</span></div>`;
+    html+=`<div class="vtr-grid">
+      <div class="vtr-stat"><div class="vtr-stat-n ${mal>0?'bad':'ok'}">${mal}</div><div class="vtr-stat-l">MALICIOUS / SUSPICIOUS</div></div>
+      <div class="vtr-stat"><div class="vtr-stat-n">${total}</div><div class="vtr-stat-l">ENGINES CHECKED</div></div>
+    </div>`;
+    if(vtData.url.categories&&Object.keys(vtData.url.categories).length){
+      const cats=[...new Set(Object.values(vtData.url.categories))].slice(0,6);
+      html+=`<div style="margin-bottom:10px"><div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:5px">CATEGORIES</div><div class="vtr-cats">${cats.map(c=>`<span class="vtr-cat">${eh(c)}</span>`).join('')}</div></div>`;
+    }
+    const pid=vtData.url.id||'';
+    if(pid)html+=`<a class="vtr-permalink" href="https://www.virustotal.com/gui/url/${pid}" target="_blank" rel="noopener">🔗 View full report on VirusTotal →</a>`;
+  }
+  // Domain stats
+  if(vtData.domain){
+    const s=vtData.domain.last_analysis_stats||{};
+    const mal=(s.malicious||0)+(s.suspicious||0);
+    html+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--body);margin-bottom:8px">Domain Reputation</div>
+      <div class="vtr-grid">
+        <div class="vtr-stat"><div class="vtr-stat-n ${mal>0?'bad':'ok'}">${mal}</div><div class="vtr-stat-l">MALICIOUS FLAGS</div></div>
+        <div class="vtr-stat"><div class="vtr-stat-n">${vtData.domain.reputation||0}</div><div class="vtr-stat-l">REPUTATION SCORE</div></div>
+      </div>`;
+    if(vtData.domain.registrar)html+=`<div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:6px">REGISTRAR: <span style="color:var(--body)">${eh(vtData.domain.registrar)}</span></div>`;
+    html+=`</div>`;
+  }
+  // IP stats
+  if(vtData.ip){
+    const s=vtData.ip.last_analysis_stats||{};
+    const mal=(s.malicious||0)+(s.suspicious||0);
+    html+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--body);margin-bottom:8px">IP Address — ${eh(vtData.ip._ip||'')}</div>
+      <div class="vtr-grid">
+        <div class="vtr-stat"><div class="vtr-stat-n ${mal>0?'bad':'ok'}">${mal}</div><div class="vtr-stat-l">MALICIOUS FLAGS</div></div>
+        <div class="vtr-stat"><div class="vtr-stat-n">${vtData.ip.reputation||0}</div><div class="vtr-stat-l">REPUTATION SCORE</div></div>
+      </div>`;
+    if(vtData.ip.as_owner)html+=`<div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:6px">ASN OWNER: <span style="color:var(--body)">${eh(vtData.ip.as_owner)}</span> · COUNTRY: <span style="color:var(--body)">${eh(vtData.ip.country||'—')}</span></div>`;
+    html+=`</div>`;
+  }
+  html+=`</div></div>`;
+  return html;
+}
+
+// ════════════════════════════════════════════
+// PARSE MARKDOWN → FINDINGS
+// ════════════════════════════════════════════
+function parseMd(md){
+  const lines=md.split('\n');
+  const sections=[];
+  let curSec=null,curFind=null,curFinds=[];
+  function pushFind(){if(curFind){curFinds.push(curFind);curFind=null;}}
+  function pushSec(){pushFind();if(curSec){sections.push({label:curSec,findings:curFinds});curFinds=[];}}
+  for(const line of lines){
+    if(line.startsWith('## ')){pushSec();curSec=line.slice(3).trim();}
+    else if(line.startsWith('### ')){
+      pushFind();
+      const raw=line.slice(4).trim();
+      const sm=raw.match(/🔴|🟠|🟡|🔵|⚪|⚫/);
+      const sm2=raw.match(/CRITICAL|HIGH|MEDIUM|LOW|INFO/i);
+      curFind={title:raw,severity:sm2?sm2[0].toLowerCase():'info',fields:{},evidence:''};
+    }
+    else if(curFind&&line.includes('| **')){
+      const m=line.match(/\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|/);
+      if(m){const k=m[1].trim(),v=m[2].trim();if(k==='Evidence')curFind.evidence=v.replace(/^`|`$/g,'');else curFind.fields[k]=v;}
+    }
+  }
+  pushSec();
+  return sections;
+}
+
+// ════════════════════════════════════════════
+// BUILD REPORT
+// ════════════════════════════════════════════
+function buildReport(data,url,mode,vtData){
+  const md=data.markdown||'';
+  _scanData=parseMd(md);
+  // count
+  const cnt={critical:0,high:0,medium:0,low:0,info:0};
+  _scanData.forEach(s=>s.findings.forEach(f=>{if(cnt[f.severity]!==undefined)cnt[f.severity]++;}));
+  const total=cnt.critical+cnt.high+cnt.medium+cnt.low+cnt.info;
+  // grade
+  const g=cnt.critical>0?'F':cnt.high>3?'D':cnt.high>0?'C':cnt.medium>3?'C':cnt.medium>0?'B':'A';
+  const gel=document.getElementById('risk-grade');gel.textContent=g;gel.className=`risk-grade ${g}`;
+  document.getElementById('cnt-c').textContent=cnt.critical;
+  document.getElementById('cnt-h').textContent=cnt.high;
+  document.getElementById('cnt-m').textContent=cnt.medium;
+  document.getElementById('cnt-l').textContent=cnt.low;
+  document.getElementById('cnt-i').textContent=cnt.info;
+  const tgt=`${url} · ${mode.toUpperCase()}`;
+  document.getElementById('rh-tgt').textContent=tgt;
+  document.getElementById('sol-tgt').textContent=tgt;
+  buildResultTabs(_scanData,cnt,total,url,mode,vtData);
+  buildSolTabs(_scanData);
+  goPage('p5');
+}
+
+// ════════════════════════════════════════════
+// RESULTS TABS
+// ════════════════════════════════════════════
+function buildExecSummary(secs,cnt,total,url,mode,vtData){
+  const g=cnt.critical>0?'F':cnt.high>3?'D':cnt.high>0?'C':cnt.medium>3?'C':cnt.medium>0?'B':'A';
+  const gradeColor={A:'var(--green)',B:'#a0e060',C:'var(--yellow)',D:'var(--orange)',F:'var(--red)'}[g];
+  const riskLabel={A:'LOW RISK',B:'GUARDED',C:'ELEVATED',D:'HIGH RISK',F:'CRITICAL RISK'}[g];
+  const scanDate=new Date().toLocaleString();
+  // top findings
+  const allFinds=[];secs.forEach(s=>s.findings.forEach(f=>allFinds.push({...f,section:s.label})));
+  allFinds.sort((a,b)=>(SEV_ORD[a.severity]||5)-(SEV_ORD[b.severity]||5));
+  const topFinds=allFinds.slice(0,5);
+  const topHtml=topFinds.length?topFinds.map(f=>{
+    const clean=f.title.replace(/^O-\d+\s*—\s*[🔴🟠🟡🔵⚪⚫]+\s*(CRITICAL|HIGH|MEDIUM|LOW|INFO|UNKNOWN):\s*/i,'');
+    const col={critical:'var(--red)',high:'var(--orange)',medium:'var(--yellow)',low:'#4db8ff',info:'var(--dim)'}[f.severity]||'var(--dim)';
+    return`<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,.04);color:${col};border:1px solid ${col};opacity:.85;white-space:nowrap;margin-top:1px">${f.severity.toUpperCase()}</span>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--bright);flex:1;line-height:1.45">${eh(clean)}</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--dim);white-space:nowrap">${eh(f.section)}</span>
+    </div>`;
+  }).join(''):`<div style="font-family:var(--mono);font-size:12px;color:var(--green);padding:16px 0">✓ No significant findings detected</div>`;
+  // section breakdown
+  const secHtml=secs.map(s=>{
+    const c={critical:0,high:0,medium:0,low:0,info:0};
+    s.findings.forEach(f=>{if(c[f.severity]!==undefined)c[f.severity]++;});
+    const worst=s.findings.reduce((w,f)=>(SEV_ORD[f.severity]||5)<(SEV_ORD[w]||5)?f.severity:w,'info');
+    const dot={critical:'var(--red)',high:'var(--orange)',medium:'var(--yellow)',low:'#4db8ff',info:'var(--dim)'}[worst]||'var(--dim)';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--body);flex:1">${eh(s.label)}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--dim)">${s.findings.length} finding${s.findings.length!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  // overall posture text
+  const postureMap={
+    A:'The target presents a low-risk security posture. No critical or high-severity vulnerabilities were identified. Continue monitoring and maintain current security hygiene.',
+    B:'The target has a generally sound security posture with some medium-severity issues that warrant attention. Address the findings below to further reduce exposure.',
+    C:'The target has elevated risk with one or more high-severity findings. Immediate remediation is recommended to prevent potential exploitation.',
+    D:'The target presents high risk. Multiple high-severity vulnerabilities were found. Urgent remediation action is required before this asset is exposed to untrusted networks.',
+    F:'CRITICAL — One or more critical vulnerabilities were identified. This target is at serious risk of compromise. Immediate remediation and incident-response review are required.'
+  };
+  const vtHtml=vtData?buildVTResultHTML(vtData,url):'';
+  return`
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:18px 22px;display:flex;flex-direction:column;gap:6px">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim)">OVERALL RISK GRADE</div>
+      <div style="font-family:var(--display);font-size:64px;line-height:1;color:${gradeColor};letter-spacing:2px">${g}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:${gradeColor};letter-spacing:2px">${riskLabel}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:18px 22px">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:12px">FINDING BREAKDOWN</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--display);font-size:28px;color:var(--red)">${cnt.critical}</span><span style="font-family:var(--mono);font-size:9px;color:var(--dim)">CRITICAL</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--display);font-size:28px;color:var(--orange)">${cnt.high}</span><span style="font-family:var(--mono);font-size:9px;color:var(--dim)">HIGH</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--display);font-size:28px;color:var(--yellow)">${cnt.medium}</span><span style="font-family:var(--mono);font-size:9px;color:var(--dim)">MEDIUM</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--display);font-size:28px;color:#4db8ff">${cnt.low}</span><span style="font-family:var(--mono);font-size:9px;color:var(--dim)">LOW</span></div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--dim)">
+        TARGET: <span style="color:var(--body)">${eh(url)}</span><br>
+        MODE: <span style="color:var(--body)">${mode.toUpperCase()}</span> &nbsp;·&nbsp; SCANNED: <span style="color:var(--body)">${scanDate}</span><br>
+        TOTAL FINDINGS: <span style="color:var(--white)">${total}</span>
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px 20px;margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">SECURITY POSTURE ASSESSMENT</div>
+    <div style="font-family:var(--sans);font-size:14px;color:var(--body);line-height:1.7;padding:12px 16px;background:rgba(${g==='F'?'255,58,92':g==='D'?'255,128,64':g==='C'?'255,201,64':g==='B'?'160,224,96':'0,230,118'},.06);border-left:3px solid ${gradeColor};border-radius:2px">${postureMap[g]}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px 20px;margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">TOP PRIORITY FINDINGS</div>
+    ${topHtml}
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px 20px;margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">SECTION BREAKDOWN — ${secs.length} MODULES</div>
+    ${secHtml}
+  </div>
+  ${vtHtml}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px 18px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.8">
+    <div style="color:var(--cyan);margin-bottom:4px;letter-spacing:1px">IMMEDIATE ACTIONS</div>
+    ${cnt.critical>0?`<div>⚠ <span style="color:var(--red)">CRITICAL:</span> ${cnt.critical} finding${cnt.critical!==1?'s':''} require immediate remediation — treat as incidents.</div>`:''}
+    ${cnt.high>0?`<div>▸ <span style="color:var(--orange)">HIGH:</span> ${cnt.high} finding${cnt.high!==1?'s':''} should be resolved within 24–72 hours.</div>`:''}
+    ${cnt.medium>0?`<div>▸ <span style="color:var(--yellow)">MEDIUM:</span> ${cnt.medium} finding${cnt.medium!==1?'s':''} should be scheduled for remediation within 2 weeks.</div>`:''}
+    ${cnt.critical===0&&cnt.high===0&&cnt.medium===0?`<div style="color:var(--green)">✓ No critical, high, or medium issues. Review low/info findings and maintain security hygiene.</div>`:''}
+    <div style="margin-top:8px">→ View the <span style="color:var(--cyan);cursor:pointer" onclick="goPage('p6')">SOLUTIONS</span> tab for step-by-step remediation guidance.</div>
+  </div>`;
+}
+
+function buildResultTabs(secs,cnt,total,url,mode,vtData){
+  const nav=document.getElementById('rpt-nav'),pg=document.getElementById('rtab-pages');
+  nav.innerHTML='';pg.innerHTML='';
+
+  // Filter out any markdown-parsed "Executive Summary" section — we render our own
+  const filtSecs=secs.filter(s=>!/executive\s*summary/i.test(s.label));
+
+  // Executive Summary tab (index 0) — always first
+  const sumBtn=document.createElement('button');
+  sumBtn.className='rnav-btn act';sumBtn.dataset.ti=0;
+  sumBtn.textContent='Executive Summary';
+  sumBtn.onclick=()=>actResultTab(0);
+  nav.appendChild(sumBtn);
+  const sumDiv=document.createElement('div');sumDiv.className='rtab-pg act';sumDiv.id='rt-0';
+  sumDiv.innerHTML=buildExecSummary(filtSecs,cnt,total,url,mode,vtData);
+  pg.appendChild(sumDiv);
+
+  // Section tabs (index 1+)
+  filtSecs.forEach((s,i)=>{
+    const tabIdx=i+1;
+    const b=document.createElement('button');
+    b.className='rnav-btn';b.dataset.ti=tabIdx;
+    b.innerHTML=eh(s.label)+(s.findings.length?`<span class="rnav-cnt">${s.findings.length}</span>`:'');
+    b.onclick=()=>actResultTab(tabIdx);
+    nav.appendChild(b);
+    const d=document.createElement('div');d.className='rtab-pg';d.id=`rt-${tabIdx}`;pg.appendChild(d);
+  });
+  filtSecs.forEach((_,i)=>renderResultPg(i+1,1));
+  // Store filtered secs for renderResultPg
+  _scanData=filtSecs;
+}
+function actResultTab(i){
+  document.querySelectorAll('#rpt-nav .rnav-btn').forEach((b,j)=>b.classList.toggle('act',j===i));
+  document.querySelectorAll('#rtab-pages .rtab-pg').forEach((p,j)=>p.classList.toggle('act',j===i));
+}
+function renderResultPg(ti,pg){
+  // ti is 1-based for sections (0 is exec summary, rendered separately)
+  const sec=_scanData[ti-1];const el=document.getElementById(`rt-${ti}`);if(!el||!sec)return;
+  const total=sec.findings.length,totalPg=Math.max(1,Math.ceil(total/RPS));
+  pg=Math.min(Math.max(1,pg),totalPg);
+  const slice=sec.findings.slice((pg-1)*RPS,pg*RPS);
+  let html='';
+  if(!slice.length){html=`<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-text">No findings in this section</div></div>`;}
+  else{
+    slice.forEach((f,idx)=>{
+      const gid=(pg-1)*RPS+idx,fid=`fc-${ti}-${gid}`;
+      const sev=f.severity;
+      const cleanTitle=f.title.replace(/^O-\d+\s*—\s*[🔴🟠🟡🔵⚪⚫]+\s*(CRITICAL|HIGH|MEDIUM|LOW|INFO|UNKNOWN):\s*/i,'');
+      let flds='';
+      Object.entries(f.fields).forEach(([k,v])=>{flds+=`<tr><td>${eh(k)}</td><td>${eh(v)}</td></tr>`;});
+      const ev=f.evidence?`<div class="fc-ev">${eh(f.evidence)}</div>`:'';
+      const owasp=f.fields['OWASP']?`<span class="fc-owasp">${eh(f.fields['OWASP'].split('—')[0].trim())}</span>`:'';
+      html+=`<div class="fc sev-${sev}" id="${fid}">
+        <div class="fc-hd" onclick="toggleFC('${fid}')">
+          <span class="fc-badge">${sev.toUpperCase()}</span>
+          <span class="fc-title">${eh(cleanTitle)}</span>
+          ${owasp}
+          <span class="fc-arr">▾</span>
+        </div>
+        <div class="fc-body"><table class="fc-tbl">${flds}</table>${ev}</div>
+      </div>`;
+    });
+  }
+  if(totalPg>1){
+    let nums='';
+    for(let p=1;p<=totalPg;p++){
+      const show=p===1||p===totalPg||Math.abs(p-pg)<=2;
+      if(!show){if(p===2||p===totalPg-1)nums+=`<span class="rpdots">…</span>`;continue;}
+      nums+=`<button class="rpnum${p===pg?' cur':''}" onclick="renderResultPg(${ti},${p})">${p}</button>`;
+    }
+    const f1=(pg-1)*RPS+1,fl=Math.min(pg*RPS,total);
+    html+=`<div class="rpbar"><span class="rpinfo">Showing ${f1}–${fl} of ${total} findings</span>
+      <button class="rpbtn" onclick="renderResultPg(${ti},${pg-1})" ${pg<=1?'disabled':''}>‹ Prev</button>
+      <div class="rpnums">${nums}</div>
+      <button class="rpbtn" onclick="renderResultPg(${ti},${pg+1})" ${pg>=totalPg?'disabled':''}>Next ›</button></div>`;
+  }
+  el.innerHTML=html;
+}
+function toggleFC(id){document.getElementById(id).classList.toggle('open');}
+
+// ════════════════════════════════════════════
+// SOLUTIONS TABS
+// ════════════════════════════════════════════
+function buildSolTabs(secs){
+  // Filter out any Executive Summary markdown section
+  const filtSecs=secs.filter(s=>!/executive\s*summary/i.test(s.label));
+  const nav=document.getElementById('sol-nav'),pg=document.getElementById('sol-pages');
+  nav.innerHTML='';pg.innerHTML='';
+  const all=[];filtSecs.forEach(s=>s.findings.forEach(f=>all.push({...f,section:s.label})));
+  all.sort((a,b)=>(SEV_ORD[a.severity]||5)-(SEV_ORD[b.severity]||5));
+  const groups=[{k:'critical',l:'Critical'},{k:'high',l:'High'},{k:'medium',l:'Medium'},{k:'low',l:'Low'},{k:'info',l:'Info'}];
+  const gmap={};groups.forEach(g=>{gmap[g.k]=all.filter(f=>f.severity===g.k);});
+  let first=-1,tabIdx=0;
+  groups.forEach(g=>{
+    const arr=gmap[g.k];if(!arr.length)return;
+    const myTab=tabIdx++;
+    if(first===-1)first=myTab;
+    const b=document.createElement('button');
+    b.className=`rnav-btn${first===myTab?' act':''}`;
+    b.dataset.st=myTab;
+    b.innerHTML=`${eh(g.l)}<span class="rnav-cnt">${arr.length}</span>`;
+    b.onclick=()=>actSolTab(myTab);
+    nav.appendChild(b);
+    const d=document.createElement('div');d.className=`rtab-pg${first===myTab?' act':''}`;d.id=`st-${myTab}`;d._arr=arr;d._sev=g.k;pg.appendChild(d);
+    renderSolPg(myTab,arr,g.k,1);
+  });
+  if(first===-1)pg.innerHTML=`<div class="empty-state"><div class="empty-icon">🛡</div><div class="empty-text">No findings to remediate</div></div>`;
+}
+function actSolTab(i){
+  document.querySelectorAll('#sol-nav .rnav-btn').forEach(b=>b.classList.toggle('act',parseInt(b.dataset.st)===i));
+  document.querySelectorAll('#sol-pages .rtab-pg').forEach(p=>p.classList.toggle('act',p.id===`st-${i}`));
+}
+function renderSolPg(ti,arr,sev,pg){
+  const el=document.getElementById(`st-${ti}`);if(!el)return;
+  const total=arr.length,totalPg=Math.max(1,Math.ceil(total/RPS));
+  pg=Math.min(Math.max(1,pg),totalPg);
+  const slice=arr.slice((pg-1)*RPS,pg*RPS),offset=(pg-1)*RPS;
+  const sevColors={critical:'var(--red)',high:'var(--orange)',medium:'var(--yellow)',low:'#4db8ff',info:'var(--dim)'};
+  const effortMap={critical:'Urgent — patch immediately',high:'High — fix within 72 hours',medium:'Medium — schedule within 2 weeks',low:'Low — address in next sprint',info:'Informational — review at convenience'};
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:14px">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">${total} ${sev.toUpperCase()} finding${total!==1?'s':''} · Resolve in priority order</div>
+    <div style="font-family:var(--mono);font-size:9px;color:${sevColors[sev]||'var(--dim)'};padding:2px 8px;border:1px solid ${sevColors[sev]||'var(--dim)'};border-radius:2px;opacity:.8">${effortMap[sev]||''}</div>
+  </div>`;
+  slice.forEach((f,idx)=>{
+    const num=offset+idx+1,fid=`sc-${ti}-${num}`;
+    const cleanTitle=f.title.replace(/^O-\d+\s*—\s*[🔴🟠🟡🔵⚪⚫]+\s*(CRITICAL|HIGH|MEDIUM|LOW|INFO|UNKNOWN):\s*/i,'');
+    const desc=f.fields['Description']||f.fields['Summary']||'';
+    const rem=f.fields['Remediation']||f.fields['Fix']||'Review and harden this component per OWASP guidelines.';
+    const ep=(f.fields['Endpoint']||f.fields['URL']||'').replace(/`/g,'');
+    const owasp=f.fields['OWASP']||'';
+    const cvss=f.fields['CVSS']||f.fields['Score']||'';
+    const impact=f.fields['Impact']||f.fields['Risk']||'';
+    const references=f.fields['References']||f.fields['Reference']||'';
+    const steps=buildSteps(f,cleanTitle,desc,rem,ep);
+    // impact & effort badges
+    const col=sevColors[f.severity]||'var(--dim)';
+    let metaChips='';
+    if(ep&&ep!=='(root)')metaChips+=`<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:2px;background:rgba(0,200,255,.06);color:var(--cyan);border:1px solid rgba(0,200,255,.15)">📍 ${eh(ep.length>40?ep.slice(0,40)+'…':ep)}</span>`;
+    if(owasp)metaChips+=`<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:2px;background:rgba(255,255,255,.03);color:var(--dim);border:1px solid var(--border)">${eh(owasp.split('—')[0].trim())}</span>`;
+    if(cvss)metaChips+=`<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:2px;background:rgba(255,201,64,.06);color:var(--yellow);border:1px solid rgba(255,201,64,.2)">CVSS ${eh(cvss)}</span>`;
+    // steps html
+    let stepsHtml=steps.map((s,si)=>`<div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border)${si===steps.length-1?';border-bottom:none':''}">
+      <div style="font-family:var(--display);font-size:18px;color:${col};width:24px;flex-shrink:0;text-align:right;opacity:.6;padding-top:1px">${si+1}</div>
+      <div style="flex:1">
+        <div style="font-family:var(--sans);font-size:14px;color:var(--body);line-height:1.6">${eh(s.text)}</div>
+        ${s.code?`<div style="margin-top:8px;background:var(--bg);border:1px solid var(--border);border-left:2px solid ${col};border-radius:2px;padding:10px 13px;font-family:var(--mono);font-size:11px;color:var(--cyan);overflow-x:auto;white-space:pre">${eh(s.code)}</div>`:''}
+      </div>
+    </div>`).join('');
+    // impact block
+    const impactHtml=impact?`<div style="padding:9px 12px;background:rgba(${f.severity==='critical'?'255,58,92':f.severity==='high'?'255,128,64':f.severity==='medium'?'255,201,64':'77,184,255'},.05);border-left:2px solid ${col};border-radius:2px;margin-bottom:12px">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:4px">IMPACT</div>
+      <div style="font-family:var(--sans);font-size:13px;color:var(--body);line-height:1.55">${eh(impact)}</div>
+    </div>`:'';
+    // references
+    const refsHtml=references?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:6px">REFERENCES</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);line-height:1.8;word-break:break-all">${eh(references)}</div>
+    </div>`:'';
+    html+=`<div class="sc sev-${f.severity}" id="${fid}" style="margin-bottom:10px">
+      <div class="sc-hd" onclick="toggleSC('${fid}')" style="padding:14px 18px">
+        <div style="font-family:var(--display);font-size:18px;color:${col};width:30px;flex-shrink:0;opacity:.7">${num}</div>
+        <div style="flex:1">
+          <div style="font-family:var(--mono);font-size:13px;color:var(--bright);line-height:1.4;margin-bottom:5px">${eh(cleanTitle)}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">${metaChips}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:10px;flex-shrink:0">
+          <span style="font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:2px;border:1px solid ${col};color:${col}">${f.severity.toUpperCase()}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">▾</span>
+        </div>
+      </div>
+      <div class="sc-body" style="padding:0 18px 18px">
+        ${desc?`<div style="font-family:var(--sans);font-size:14px;color:var(--body);line-height:1.7;padding:14px 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px">${eh(desc)}</div>`:''}
+        ${impactHtml}
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:8px">REMEDIATION STEPS</div>
+        ${stepsHtml}
+        ${refsHtml}
+      </div>
+    </div>`;
+  });
+  if(totalPg>1){
+    let nums='';
+    for(let p=1;p<=totalPg;p++){
+      const show=p===1||p===totalPg||Math.abs(p-pg)<=2;
+      if(!show){if(p===2||p===totalPg-1)nums+=`<span class="rpdots">…</span>`;continue;}
+      nums+=`<button class="rpnum${p===pg?' cur':''}" onclick="solPg(${ti},${p})">${p}</button>`;
+    }
+    html+=`<div class="rpbar"><span class="rpinfo">${(pg-1)*RPS+1}–${Math.min(pg*RPS,total)} of ${total}</span>
+      <button class="rpbtn" onclick="solPg(${ti},${pg-1})" ${pg<=1?'disabled':''}>‹ Prev</button>
+      <div class="rpnums">${nums}</div>
+      <button class="rpbtn" onclick="solPg(${ti},${pg+1})" ${pg>=totalPg?'disabled':''}>Next ›</button></div>`;
+  }
+  el.innerHTML=html;
+}
+function solPg(ti,pg){const el=document.getElementById(`st-${ti}`);if(el&&el._arr)renderSolPg(ti,el._arr,el._sev,pg);}
+function toggleSC(id){document.getElementById(id).classList.toggle('open');}
+
+// ════════════════════════════════════════════
+// STEP BUILDER
+// ════════════════════════════════════════════
+function buildSteps(f,title,desc,rem,ep){
+  const t=title.toLowerCase();
+  const S=(text,code)=>({text,code});
+
+  if(t.includes('x-frame-options')||t.includes('clickjacking'))return[
+    S('Add X-Frame-Options to all HTTP responses.'),
+    S('Set the value in your web server config:','X-Frame-Options: DENY\n# or:\nX-Frame-Options: SAMEORIGIN'),
+    S('Preferred: use CSP frame-ancestors instead:','Content-Security-Policy: frame-ancestors \'none\''),
+    S('Verify in DevTools → Network → Response Headers after deploy.')];
+
+  if(t.includes('csp')||t.includes('content-security-policy'))return[
+    S('Add a Content-Security-Policy header to all responses.'),
+    S('Start with a strict default and loosen only as needed:','Content-Security-Policy: default-src \'self\'; script-src \'self\'; object-src \'none\'; base-uri \'self\';'),
+    S('Enable CSP reporting to identify breakages before full enforcement.'),
+    S('Avoid unsafe-inline and unsafe-eval. Use nonces for legitimate inline scripts.')];
+
+  if(t.includes('hsts')||t.includes('strict-transport'))return[
+    S('Add the HSTS header to all HTTPS responses:','Strict-Transport-Security: max-age=31536000; includeSubDomains; preload'),
+    S('Ensure ALL subdomains are HTTPS-only before enabling includeSubDomains.'),
+    S('Submit your domain to the HSTS preload list at hstspreload.org.')];
+
+  if(t.includes('sql')||t.includes('sqli'))return[
+    S('Replace all dynamic SQL string concatenation with parameterised queries.'),
+    S('Python example:','cursor.execute(\'SELECT * FROM users WHERE id = %s\', (user_id,))'),
+    S('Node.js example:','db.query(\'SELECT * FROM users WHERE id = ?\', [userId])'),
+    S('Use an ORM (SQLAlchemy, Hibernate, Sequelize) which parameterises by default.'),
+    S('Apply DB least privilege: the DB user should have only SELECT/INSERT on required tables.')];
+
+  if(t.includes('xss')||t.includes('cross-site scripting'))return[
+    S('HTML-encode all user-supplied content before rendering in the DOM.'),
+    S('Use a context-aware escaping library (DOMPurify for JS, OWASP Java Encoder).'),
+    S('Implement a strict Content-Security-Policy to prevent execution of injected scripts.'),
+    S('Set HttpOnly on session cookies to prevent XSS from stealing them.'),
+    S('Audit all usages of innerHTML, document.write, and eval() and replace with safe alternatives.')];
+
+  if(t.includes('cors'))return[
+    S('Remove Access-Control-Allow-Origin: * on any endpoint that handles authenticated data.'),
+    S('Maintain an explicit origin allowlist and reflect only matching origins:','ALLOWED = [\'https://app.co\', \'https://admin.co\']\nif origin in ALLOWED:\n    response.headers[\'Access-Control-Allow-Origin\'] = origin'),
+    S('Never combine wildcard ACAO with Access-Control-Allow-Credentials: true.')];
+
+  if(t.includes('plain http')||t.includes('served over http')||(t.includes('http')&&!t.includes('https')))return[
+    S('Obtain a TLS certificate (free via Let\'s Encrypt) and configure HTTPS on your server.'),
+    S('Redirect all HTTP traffic to HTTPS at the load balancer or web server:','# Nginx\nserver {\n  listen 80;\n  return 301 https://$host$request_uri;\n}'),
+    S('Enable HSTS after all redirects are confirmed working.'),
+    S('Test at ssllabs.com/ssltest — aim for A+ rating.')];
+
+  if(t.includes('cookie'))return[
+    S('Set the Secure flag so cookies are only sent over HTTPS.'),
+    S('Set HttpOnly to prevent JavaScript from reading session cookies.'),
+    S('Set SameSite=Strict or SameSite=Lax to prevent CSRF.'),
+    S('Flask example:','app.config[\'SESSION_COOKIE_SECURE\'] = True\napp.config[\'SESSION_COOKIE_HTTPONLY\'] = True\napp.config[\'SESSION_COOKIE_SAMESITE\'] = \'Lax\'')];
+
+  if(t.includes('idor')||t.includes('object reference')||t.includes('access control'))return[
+    S('Implement object-level authorisation on every data-fetching endpoint.'),
+    S('Verify the requesting user owns the resource before returning it:','if obj.owner_id != current_user.id:\n    raise PermissionError(403)'),
+    S('Use UUIDs instead of sequential integers for public-facing resource IDs.'),
+    S('Add integration tests that verify cross-user data access returns 403.')];
+
+  if(t.includes('admin')||t.includes('exposed')||t.includes('accessible without'))return[
+    S('Require authentication AND authorisation checks on all admin/management paths.'),
+    S('Apply IP allowlisting for admin interfaces where operationally feasible.'),
+    S('Remove or disable any debug, test, or admin pages in production builds.'),
+    S('Log and alert on all accesses to sensitive admin endpoints.')];
+
+  if(t.includes('version')||t.includes('disclosure')||t.includes('x-powered-by'))return[
+    S('Remove or genericise server version headers.'),
+    S('Nginx:','server_tokens off;'),
+    S('Apache:','ServerTokens Prod\nServerSignature Off'),
+    S('Express.js:','app.disable(\'x-powered-by\');'),
+    S('Audit HTML source, error pages, and API responses for version strings.')];
+
+  if(t.includes('csrf'))return[
+    S('Implement CSRF tokens on all state-changing requests (POST, PUT, DELETE, PATCH).'),
+    S('Use SameSite=Strict cookies as an additional layer of CSRF protection.'),
+    S('Validate the Origin and Referer headers on sensitive endpoints.'),
+    S('Ensure tokens are per-session, cryptographically random, and validated server-side.')];
+
+  if(t.includes('jwt'))return[
+    S('Verify the JWT signature on every request using a strong secret or RS256 key pair.'),
+    S('Reject tokens with alg: none or unexpected algorithms.'),
+    S('Set short expiry times (15–60 min) and implement refresh token rotation.'),
+    S('Never store sensitive PII in the JWT payload — it is base64-encoded, not encrypted.')];
+
+  if(t.includes('ssrf'))return[
+    S('Validate and sanitise all user-supplied URLs before making server-side requests.'),
+    S('Block requests to internal IP ranges: 127.x, 10.x, 172.16–31.x, 192.168.x, 169.254.169.254.'),
+    S('Maintain an allowlist of permitted external domains.'),
+    S('Disable URL redirects in your HTTP client when processing user-supplied URLs.')];
+
+  if(t.includes('path traversal')||t.includes('lfi'))return[
+    S('Never use user input directly in file path construction.'),
+    S('Resolve the real path and verify it stays within your intended base directory:','import os\nbase = \'/var/www/uploads\'\nresolved = os.path.realpath(os.path.join(base, user_input))\nif not resolved.startswith(base):\n    raise ValueError(\'Path traversal detected\')'),
+    S('Use allowlists of permitted filenames rather than blocklists of banned patterns.')];
+
+  // generic fallback
+  return[
+    S(rem||'Review the OWASP guidelines for this vulnerability class.'),
+    S('Conduct a code review of the affected endpoint to identify the root cause.'),
+    S('Deploy a fix in staging, re-run AEGIS, and confirm the finding is resolved.'),
+    S('Document the fix in your security changelog and add a regression test.')];
+}
+</script>
+</body>
+</html>
