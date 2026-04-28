@@ -17,8 +17,6 @@ from user_store import load_users, save_users, hash_pw, ensure_admin, invalidate
 # ── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 USERS_FILE  = os.path.join(BASE_DIR, "users.json")
-REPORTS_DIR = os.path.join(BASE_DIR, "reports")
-os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -89,18 +87,6 @@ def run_scan_internal(target_url, mode, preset, token, cookie, username, passwor
     if "===AEGIS_REPORT_START===" in raw_stdout and "===AEGIS_REPORT_END===" in raw_stdout:
         md = raw_stdout.split("===AEGIS_REPORT_START===", 1)[1].split("===AEGIS_REPORT_END===", 1)[0].strip()
 
-    # Fallback: try to find report file on disk (works locally)
-    if not md:
-        start_t = time.time()
-        reports = sorted(
-            [f for f in glob.glob(os.path.join(REPORTS_DIR, "*.md"))
-             if os.path.getmtime(f) >= start_t - 30],
-            key=os.path.getmtime
-        )
-        if reports:
-            with open(reports[-1], encoding="utf-8") as f:
-                md = f.read()
-
     # Filter out the report delimiters from the log lines shown to the user
     lines = [l for l in lines if "===AEGIS_REPORT" not in l and not l.startswith("# Security Assessment")]
 
@@ -132,14 +118,8 @@ def build_full_html():
         for email, u in users.items()
     })
 
-    # Get existing reports for display
+    # Reports are delivered via stdout, not files — pass empty list to JS
     reports_list = []
-    for rp in sorted(glob.glob(os.path.join(REPORTS_DIR, "*.md")), key=os.path.getmtime, reverse=True)[:10]:
-        try:
-            with open(rp, encoding="utf-8") as f:
-                reports_list.append({"name": os.path.basename(rp), "content": f.read()})
-        except:
-            pass
     reports_json = json.dumps(reports_list)
 
     # Inject our custom JS BEFORE the closing </script> to override fetch-based functions

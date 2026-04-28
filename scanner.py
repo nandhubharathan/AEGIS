@@ -1316,9 +1316,6 @@ def exec_summary(nikto_f, nuclei_f, sqlmap_f, owasp_f):
 
 
 def save_report(target_url, mode, nikto_out, nuclei_out, sqlmap_results, owasp_findings):
-    ts       = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-    safe     = re.sub(r'[^\w.-]','_', urllib.parse.urlparse(target_url).netloc or "target")
-    filename = f"reports/{safe}_{mode}_{ts}.md"
 
     nikto_f  = parse_nikto(nikto_out)
     nuclei_f = parse_nuclei(nuclei_out)
@@ -1374,21 +1371,12 @@ def save_report(target_url, mode, nikto_out, nuclei_out, sqlmap_results, owasp_f
 
 {render_owasp(owasp_findings)}
 """
-    # Try to save to file (will fail on read-only FS like Streamlit Cloud)
-    try:
-        os.makedirs("reports", exist_ok=True)
-        with open(filename, "w", encoding="utf-8") as fh:
-            fh.write(content)
-        print(f"[+] Report saved: {filename}  ({total} findings, {crit_high} critical/high)")
-    except OSError:
-        print(f"[+] Report generated in-memory  ({total} findings, {crit_high} critical/high)")
+    print(f"[+] Report generated ({total} findings, {crit_high} critical/high)")
 
-    # Always print the report content to stdout with delimiters so app.py can extract it
+    # Print report to stdout with delimiters so app.py can extract it
     print("===AEGIS_REPORT_START===")
     print(content)
     print("===AEGIS_REPORT_END===")
-
-    return filename
 
 
 # ── SQLMap runner ─────────────────────────────────────────────────────────────
@@ -1539,11 +1527,6 @@ if __name__ == "__main__":
         parser.error("--url is required")
 
     target_url = args.url.rstrip("/")
-
-    try:
-        os.makedirs("reports", exist_ok=True)
-    except OSError:
-        pass  # read-only FS — report will be printed to stdout instead
 
     # ── Build auth ────────────────────────────────────────────────────────────
     # Priority: token/cookie-str from CLI > preset login > username/password login
