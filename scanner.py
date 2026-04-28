@@ -1474,33 +1474,53 @@ def execute_scan(target_url, mode, auth, preset_cfg, sqlmap_endpoints):
 
     # ── Nikto ─────────────────────────────────────────────────────────────────
     print(f"\n  [1/4] Nikto")
-    nikto_tuning = "123bde" if mode == "standard" else "123456789abcde"
-    nikto_res = subprocess.run(
-        ["nikto","-h",target_url,"-Tuning",nikto_tuning,"-maxtime","120"],
-        capture_output=True, text=True,
-    )
+    nikto_stdout = ""
+    try:
+        nikto_tuning = "123bde" if mode == "standard" else "123456789abcde"
+        nikto_res = subprocess.run(
+            ["nikto","-h",target_url,"-Tuning",nikto_tuning,"-maxtime","120"],
+            capture_output=True, text=True,
+        )
+        nikto_stdout = nikto_res.stdout or ""
+    except FileNotFoundError:
+        print("    [!] Nikto not installed — skipping")
+    except Exception as e:
+        print(f"    [!] Nikto error: {e}")
 
     # ── Nuclei ────────────────────────────────────────────────────────────────
     print(f"  [2/4] Nuclei")
-    nuclei_tags = "owasp,cve,misconfig,exposure,token,auth,xss,sqli"
-    if mode == "deep":
-        nuclei_tags += ",ssrf,xxe,rce,lfi,ssti,redirect,injection,default-login,traversal"
-    nuclei_cmd = ["nuclei","-u",target_url,"-as","-silent","-tags",nuclei_tags]
-    if auth:
-        for k,v in auth.items():
-            if k=="Authorization": nuclei_cmd.extend(["-header",f"Authorization: {v}"])
-            else: nuclei_cmd.extend(["-header",f"Cookie: {k}={v}"])
-    nuclei_res = subprocess.run(nuclei_cmd, capture_output=True, text=True)
+    nuclei_stdout = ""
+    try:
+        nuclei_tags = "owasp,cve,misconfig,exposure,token,auth,xss,sqli"
+        if mode == "deep":
+            nuclei_tags += ",ssrf,xxe,rce,lfi,ssti,redirect,injection,default-login,traversal"
+        nuclei_cmd = ["nuclei","-u",target_url,"-as","-silent","-tags",nuclei_tags]
+        if auth:
+            for k,v in auth.items():
+                if k=="Authorization": nuclei_cmd.extend(["-header",f"Authorization: {v}"])
+                else: nuclei_cmd.extend(["-header",f"Cookie: {k}={v}"])
+        nuclei_res = subprocess.run(nuclei_cmd, capture_output=True, text=True)
+        nuclei_stdout = nuclei_res.stdout or ""
+    except FileNotFoundError:
+        print("    [!] Nuclei not installed — skipping")
+    except Exception as e:
+        print(f"    [!] Nuclei error: {e}")
 
     # ── SQLMap ────────────────────────────────────────────────────────────────
     print(f"  [3/4] SQLMap")
-    sqlmap_results = run_sqlmap(sqlmap_endpoints, auth, deep=(mode=="deep")) if sqlmap_endpoints else []
+    sqlmap_results = []
+    try:
+        sqlmap_results = run_sqlmap(sqlmap_endpoints, auth, deep=(mode=="deep")) if sqlmap_endpoints else []
+    except FileNotFoundError:
+        print("    [!] SQLMap not installed — skipping")
+    except Exception as e:
+        print(f"    [!] SQLMap error: {e}")
 
     # ── Active OWASP checks ───────────────────────────────────────────────────
     print(f"  [4/4] Active checks ({'deep' if mode=='deep' else 'standard'})")
     owasp_findings = run_active_checks(target_url, mode, auth, preset_cfg)
 
-    save_report(target_url, mode, nikto_res.stdout, nuclei_res.stdout, sqlmap_results, owasp_findings)
+    save_report(target_url, mode, nikto_stdout, nuclei_stdout, sqlmap_results, owasp_findings)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
