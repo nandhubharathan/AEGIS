@@ -135,7 +135,7 @@ async function signIn() {{
     document.getElementById('si-pass').classList.remove('err');
     err.textContent = '';
 
-    if(!email || !/^[^\\\\s@]+@[^\\\\s@]+\\\\.[^\\\\s@]+$/.test(email)){{
+    if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){{
         document.getElementById('si-email').classList.add('err');
         err.textContent = 'Please enter a valid email address.'; return;
     }}
@@ -205,7 +205,7 @@ async function launch(){{
     const raw = document.getElementById('urlInput').value.trim();
     const uel = document.getElementById('urlInput');
     if(!raw){{uel.classList.add('err');return;}}
-    if(!/^https?:\\/\\//i.test(raw)){{uel.classList.add('err');showErr('URL must start with http:// or https://');return;}}
+    if(!/^https?:\/\//i.test(raw)){{uel.classList.add('err');showErr('URL must start with http:// or https://');return;}}
     uel.classList.remove('err');
     document.getElementById('errbox').style.display='none';
 
