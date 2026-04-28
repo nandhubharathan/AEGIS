@@ -1,1 +1,5 @@
 nmap
+nikto
+sqlmap
+perl
+libnet-ssleay-perl

@@ -26,11 +26,36 @@ Usage:
                     [--list]
 """
 
-import argparse, base64, datetime, json, os, re, subprocess, sys, time, urllib.parse, urllib3
+import argparse, base64, datetime, json, os, re, subprocess, sys, time, urllib.parse, urllib3, shutil, zipfile, io as _io
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# ── Auto-install nuclei if not found ──────────────────────────────────────────
+NUCLEI_VERSION = "3.3.7"
+def ensure_nuclei():
+    """Download nuclei binary if not already installed."""
+    if shutil.which("nuclei"):
+        return  # already installed
+    nuclei_path = "/tmp/nuclei"
+    if os.path.isfile(nuclei_path) and os.access(nuclei_path, os.X_OK):
+        os.environ["PATH"] = "/tmp:" + os.environ.get("PATH", "")
+        return
+    try:
+        url = f"https://github.com/projectdiscovery/nuclei/releases/download/v{NUCLEI_VERSION}/nuclei_{NUCLEI_VERSION}_linux_amd64.zip"
+        print(f"[*] Downloading nuclei v{NUCLEI_VERSION}...")
+        resp = requests.get(url, timeout=60)
+        resp.raise_for_status()
+        with zipfile.ZipFile(_io.BytesIO(resp.content)) as zf:
+            zf.extract("nuclei", "/tmp")
+        os.chmod(nuclei_path, 0o755)
+        os.environ["PATH"] = "/tmp:" + os.environ.get("PATH", "")
+        print(f"[+] Nuclei installed to {nuclei_path}")
+    except Exception as e:
+        print(f"[!] Could not install nuclei: {e}")
+
+ensure_nuclei()
 
 # ── Severity helpers ──────────────────────────────────────────────────────────
 SEVERITY_ORDER = {"critical":0,"high":1,"medium":2,"low":3,"info":4,"unknown":5}
