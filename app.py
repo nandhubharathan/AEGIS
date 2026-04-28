@@ -281,60 +281,108 @@ function loadLastReport() {{}}
 # MAIN APP
 # ══════════════════════════════════════════════════════════════════════════════
 def main():
-    # ── Check for scan request via query params ──────────────────────────
-    params = st.query_params
-    if params.get("aegis_scan") == "1":
-        scan_url = params.get("scan_url", "")
-        scan_mode = params.get("scan_mode", "standard")
-        scan_preset = params.get("scan_preset", "")
-        scan_token = params.get("scan_token", "")
-        scan_cookie = params.get("scan_cookie", "")
-        scan_user = params.get("scan_user", "")
-        scan_pass = params.get("scan_pass", "")
-
-        # Clear query params so refresh doesn't re-run scan
-        st.query_params.clear()
-
-        # Show scanning status in Streamlit UI
-        with st.status(f"🔍 Scanning {scan_url}...", expanded=True) as status:
-            progress = st.progress(0, text="Initializing scanner...")
-            log_area = st.empty()
-
-            progress.progress(10, text="Running scanner...")
-            lines, md = run_scan_internal(
-                scan_url, scan_mode, scan_preset,
-                scan_token, scan_cookie, scan_user, scan_pass
-            )
-            progress.progress(100, text="Scan complete!")
-
-            if lines:
-                log_area.code('\n'.join(lines[-20:]))
-
-            status.update(label="✅ Scan complete!", state="complete")
-
-        # Store results for the iframe to pick up on next render
-        st.session_state.scan_result = {
-            "done": True,
-            "url": scan_url,
-            "mode": scan_mode,
-            "lines": lines,
-            "markdown": md,
-            "error": "" if md else "No report generated",
-        }
-        st.session_state.scan_log = lines
-        st.session_state.scan_report_md = md
-
-        # Rerun to render the HTML with results injected
-        st.rerun()
-
     # ── Render the main page ─────────────────────────────────────────────
     html_content = build_full_html()
     components.html(html_content, height=900, scrolling=True)
 
-    # Clear scan result after rendering so it doesn't persist on manual refresh
+    # ── Streamlit-native scan form (below the iframe) ────────────────────
+    st.markdown("""
+    <style>
+    .scan-form-wrapper {
+        background: linear-gradient(135deg, #0a0e17 0%, #111827 100%);
+        border: 1px solid #1e3a5f;
+        border-radius: 8px;
+        padding: 24px;
+        margin-top: 8px;
+    }
+    .scan-form-wrapper h3 {
+        color: #00d4ff;
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 14px;
+        letter-spacing: 2px;
+        margin-bottom: 16px;
+    }
+    </style>
+    <div class="scan-form-wrapper">
+        <h3>🛡 AEGIS SCANNER — LAUNCH PANEL</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([3, 1, 1])
+    with col1:
+        scan_url = st.text_input("🎯 Target URL", placeholder="https://target.example.com", key="scan_url_input")
+    with col2:
+        scan_mode = st.selectbox("Mode", ["standard", "deep"], key="scan_mode_input")
+    with col3:
+        scan_preset = st.selectbox("Preset", ["(none)", "juice_shop", "dvwa", "webgoat"], key="scan_preset_input")
+
+    with st.expander("🔐 Authentication (optional)"):
+        ac1, ac2 = st.columns(2)
+        with ac1:
+            s_token = st.text_input("Bearer Token", key="s_token")
+            s_user = st.text_input("Username", key="s_user")
+        with ac2:
+            s_cookie = st.text_input("Cookie", key="s_cookie")
+            s_pass = st.text_input("Password", type="password", key="s_pass")
+
+    if st.button("▶  LAUNCH SCAN", use_container_width=True, type="primary"):
+        if not scan_url:
+            st.error("Enter a target URL")
+        elif not scan_url.startswith(("http://", "https://")):
+            st.error("URL must start with http:// or https://")
+        else:
+            preset = scan_preset if scan_preset != "(none)" else ""
+            with st.status(f"🔍 Scanning {scan_url}...", expanded=True) as status:
+                progress = st.progress(0, text="Initializing scanner...")
+                log_area = st.empty()
+
+                progress.progress(10, text="Running scanner...")
+                lines, md = run_scan_internal(
+                    scan_url, scan_mode, preset,
+                    s_token, s_cookie, s_user, s_pass
+                )
+                progress.progress(100, text="Scan complete!")
+
+                if lines:
+                    log_area.code('\n'.join(lines[-30:]))
+
+                status.update(label="✅ Scan complete!", state="complete")
+
+            # Store results for the iframe to pick up on next render
+            st.session_state.scan_result = {
+                "done": True,
+                "url": scan_url,
+                "mode": scan_mode,
+                "lines": lines,
+                "markdown": md,
+                "error": "" if md else "No report generated",
+            }
+            st.session_state.scan_log = lines
+            st.session_state.scan_report_md = md
+
+            # Show report directly in Streamlit
+            if md:
+                st.markdown("---")
+                st.markdown("### 📋 Scan Report")
+                st.markdown(md)
+            else:
+                st.warning("No report was generated. Check the log above for errors.")
+
+            # Rerun to inject results into iframe
+            st.rerun()
+
+    # Show last report if available
+    if st.session_state.scan_report_md:
+        st.markdown("---")
+        st.markdown("### 📋 Latest Scan Report")
+        with st.expander("View Full Report", expanded=False):
+            st.markdown(st.session_state.scan_report_md)
+
+    # Clear scan result after rendering
     if st.session_state.get("scan_result"):
         st.session_state.scan_result = None
 
 
 if __name__ == "__main__":
     main()
+
