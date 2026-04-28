@@ -1,12 +1,17 @@
 {
-  "admin@aegis.local": {
-    "email": "admin@aegis.local",
-    "pw_hash": "bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24",
-    "role": "admin"
-  },
   "nandhubharathan2513@gmail.com": {
     "email": "nandhubharathan2513@gmail.com",
     "pw_hash": "ceaced71ab1300b6e397ce4829aa53d63eec845f0cee4f231a85bc245cc53dfd",
+    "role": "user"
+  },
+  "admin@aegis.com": {
+    "email": "admin@aegis.com",
+    "pw_hash": "7aa2f06cd378bf3ea21d4b027e6bfdd4df996ee4665891c78477bd7850292032",
+    "role": "admin"
+  },
+  "joshua@gmail.com": {
+    "email": "joshua@gmail.com",
+    "pw_hash": "af41cf138eb2ae3a2b1746f394114eab749dd789d5852c47ab7bd11a18decdf6",
     "role": "user"
   }
 }
