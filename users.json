@@ -1,0 +1,12 @@
+{
+  "admin@aegis.local": {
+    "email": "admin@aegis.local",
+    "pw_hash": "bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24",
+    "role": "admin"
+  },
+  "nandhubharathan2513@gmail.com": {
+    "email": "nandhubharathan2513@gmail.com",
+    "pw_hash": "ceaced71ab1300b6e397ce4829aa53d63eec845f0cee4f231a85bc245cc53dfd",
+    "role": "user"
+  }
+}
