@@ -1,6 +1,3 @@
 streamlit
-flask
-flask-cors
-requests
-python-nmap
 PyGithub
+requests
